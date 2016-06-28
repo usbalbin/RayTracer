@@ -1,2 +1,2 @@
 # RayTracer
-Reverse ray tracer for rendering graphics on cpu or gpu via OpenCL
+Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL. 
