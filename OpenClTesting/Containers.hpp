@@ -1,11 +1,14 @@
 #pragma once
 
+#include "glm\mat4x4.hpp"
 
 #include "glm\vec2.hpp"
 #include "glm\vec3.hpp"
 #include "glm\vec4.hpp"
 
 //Always use largest type first in structs shared by openCL device, also make sure they are defined AND aligned the same
+
+typedef glm::mat4 float16;
 
 typedef glm::vec2 float2;
 typedef glm::vec3 float3;
@@ -15,8 +18,11 @@ struct Vertex {
 	Vertex() {}
 	Vertex(float3 position) : position(position), color(0.0f){}
 	Vertex(float3 position, float4 color) : position(position), color(color) {}
+	Vertex(float3 position, float4 color, float3 normal) : position(position), color(color), normal(normal) {}
 	float4 color;
+	__declspec(align(4 * sizeof(float))) float3 normal;
 	__declspec(align(4 * sizeof(float))) float3 position;
+
 };
 
 struct Ray {

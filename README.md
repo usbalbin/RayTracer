@@ -2,6 +2,17 @@
 Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 
 ## TODO:
+- Rename "Object" struct to "Mesh"
+
+- Add support for multiple AABBs per mesh so there will be fewer triangles(expensive) to check for intersection per AABB(cheap) to improve performance.
+
+- If possible, increase number of threads per Mesh in "vertex-shader"-kernel. There is currently only 1 thread / Mesh.
+
+- Consider moving AABB step into "vertex-shader" if beneficial
+
+- Consider adding frustum culling step after AABB step
+
+## WIP
 
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative http://www.geeksforgeeks.org/inorder-tree-traversal-without-recursion/
 

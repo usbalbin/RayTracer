@@ -5,6 +5,7 @@
 
 typedef struct {
 	float4 color;
+	float3 normal;
 	float3 position;
 }Vertex;
 
@@ -34,3 +35,9 @@ typedef struct {
 	int numTriangles;
 	int numVertices;
 } Object;
+
+typedef struct {
+	float16 modelMatrix;
+	int meshType;
+	int startVertex;
+} Instance;

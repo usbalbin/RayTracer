@@ -6,6 +6,7 @@
 #include "OpenClRayTracer.hpp"
 #include "OpenClContexts.hpp"
 #include "OpenGlShaders.hpp"
+#include "Meshes.hpp"
 
 int main()
 {
@@ -48,7 +49,7 @@ int main()
 		};
 
 		side = 0.5f;
-		std::vector<Vertex> smallCubeVertices = {
+		/*std::vector<Vertex> smallCubeVertices = {
 			Vertex(float3(-side, -side, +side), float4(0.0f, 0.0f, 1.0f, 1.0f)),
 			Vertex(float3(+side, -side, +side), float4(1.0f, 0.0f, 1.0f, 1.0f)),
 			Vertex(float3(+side, +side, +side), float4(1.0f, 1.0f, 1.0f, 1.0f)),
@@ -60,19 +61,21 @@ int main()
 		};
 
 		std::vector<TriangleIndices> cubeTriangleIndices = {
-
 			TriangleIndices(0, 1, 2), TriangleIndices(2, 3, 0),
 			TriangleIndices(3, 2, 6), TriangleIndices(6, 7, 3),
 			TriangleIndices(7, 6, 5), TriangleIndices(5, 4, 7),
 			TriangleIndices(4, 0, 3), TriangleIndices(3, 7, 4),
 			TriangleIndices(0, 1, 5), TriangleIndices(5, 4, 0),
 			TriangleIndices(1, 5, 6), TriangleIndices(6, 2, 1)
-		};
+		};*/
 
 		object = openClRayTracer.push_back(trianglesIndices, triangleVerticesLower);
 		object = openClRayTracer.push_back(trianglesIndices, triangleVertices);
-		object = openClRayTracer.push_back(cubeTriangleIndices, cubeVertices);
-		object = openClRayTracer.push_back(cubeTriangleIndices, smallCubeVertices);
+		
+		object = openClRayTracer.push_back(genInvertedCubeIndices(), genInvertedCubeVertices(10));
+		
+		object = openClRayTracer.push_back(genCubeIndices(), genCubeVertices(0.5f));
+		//object = openClRayTracer.push_back(cubeTriangleIndices, smallCubeVertices);
 
 		openClRayTracer.resize();
 		openClRayTracer.writeToBuffers();
@@ -82,17 +85,23 @@ int main()
 	auto vertices = openClRayTracer.getVertices(object);
 
 
-
+	float v = 0;//3.14159265f / 1.0f;
 	while (!glfwWindowShouldClose(renderer.getWindow())) {
+		float16 matrix{
+			+cos(v), +0, +sin(v), +0,
+			+0, +1, +0, +0,
+			-sin(v), +0, +cos(v), +0,
+			+0, +0, +0, +1
+		};
 		//openClRayTracer.computeOnCPU();//compute();
 		//renderer.draw();
 		if(1)
-			openClRayTracer.compute();
+			openClRayTracer.compute(matrix);
 		else
-			openClRayTracer.debug();
+			openClRayTracer.debug(matrix);
 		renderer.draw();
+		v += 1e-2f;
 	}
 	//system("pause");
     return 0;
 }
-

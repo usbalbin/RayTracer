@@ -39,6 +39,7 @@ std::string readFileToString(std::string filePath) {
 	}
 	fileStream.close();
 
+
 	return fileContents;
 	
 }

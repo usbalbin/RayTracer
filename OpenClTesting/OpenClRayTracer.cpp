@@ -144,23 +144,23 @@ void OpenClRayTracer::writeToBuffers() {
 		exit(1);
 	}
 
-	if (computeKernel.setArg(1, objectBuffer) != CL_SUCCESS) {
+	if (computeKernel.setArg(2, objectBuffer) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
-	if (computeKernel.setArg(2, triangleBuffer) != CL_SUCCESS) {
+	if (computeKernel.setArg(3, triangleBuffer) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
-	if (computeKernel.setArg(3, vertexBuffer) != CL_SUCCESS) {
+	if (computeKernel.setArg(4, vertexBuffer) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
 
 }
 
-void OpenClRayTracer::compute() {
-	computeNonBlocking().wait();
+void OpenClRayTracer::compute(float16 matrix) {
+	computeNonBlocking(matrix).wait();
 	fetchResult();
 }
 
@@ -170,7 +170,7 @@ void OpenClRayTracer::computeOnCPU()
 	result = cpuRayTrace(width, height, objects, triangles, vertices);
 }
 
-cl::Event OpenClRayTracer::computeNonBlocking() {
+cl::Event OpenClRayTracer::computeNonBlocking(float16 matrix) {
 	
 	
 	//Make sure OpenGL is done working
@@ -184,7 +184,12 @@ cl::Event OpenClRayTracer::computeNonBlocking() {
 	queue.finish();//Make sure OpenCL has grabbed the texture from GL(probably not needed)
 	
 	
-	if (computeKernel.setArg(4, resultImages[0]) != CL_SUCCESS) {
+	if (computeKernel.setArg(5, resultImages[0]) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+
+	if (computeKernel.setArg(1, sizeof(float16), &matrix) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
@@ -208,7 +213,7 @@ void OpenClRayTracer::fetchResult() {
 	queue.finish();//Make wait for it to be released
 }
 
-cl::Event OpenClRayTracer::debug() {
+cl::Event OpenClRayTracer::debug(float16 matrix) {
 
 	if (queue.enqueueWriteBuffer(objectBuffer, CL_TRUE, 0, sizeof(Object) * objects.size(), objects.data()) != CL_SUCCESS) {
 		std::cout << "Failed to write to buffer" << std::endl;
@@ -241,19 +246,24 @@ cl::Event OpenClRayTracer::debug() {
 		exit(1);
 	}
 
-	if (computeKernel.setArg(1, objectBuffer) != CL_SUCCESS) {
+	if (computeKernel.setArg(1, sizeof(float16), &matrix) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
-	if (computeKernel.setArg(2, triangleBuffer) != CL_SUCCESS) {
+
+	if (computeKernel.setArg(2, objectBuffer) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
-	if (computeKernel.setArg(3, vertexBuffer) != CL_SUCCESS) {
+	if (computeKernel.setArg(3, triangleBuffer) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
-	if (computeKernel.setArg(4, resultImages[0]) != CL_SUCCESS) {
+	if (computeKernel.setArg(4, vertexBuffer) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+	if (computeKernel.setArg(5, resultImages[0]) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
@@ -262,7 +272,7 @@ cl::Event OpenClRayTracer::debug() {
 	int openClOut = 0;
 	cl::Buffer sizeBuff(context, CL_MEM_WRITE_ONLY, sizeof(openClOut));
 
-	if (computeKernel.setArg(5, sizeBuff) != CL_SUCCESS) {
+	if (computeKernel.setArg(6, sizeBuff) != CL_SUCCESS) {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}

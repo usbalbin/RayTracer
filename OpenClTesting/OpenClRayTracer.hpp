@@ -27,10 +27,10 @@ public:
 
 
 	void computeOnCPU();
-	cl::Event computeNonBlocking();
-	void compute();
+	cl::Event computeNonBlocking(float16 matrix);
+	void compute(float16 matrix);
 	void fetchResult();
-	cl::Event debug();
+	cl::Event debug(float16 matrix);
 
 private:
 	void initialize(cl::Context context, cl::Device device);

@@ -1,3 +1,5 @@
+#include "math.h"
+
 
 #define xIndex get_global_id(0)
 #define yIndex get_global_id(1)
@@ -5,8 +7,8 @@
 #define height get_global_size(1)
 
 
-float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices) {
-	Ray ray = genPerspectiveRay();
+float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, float16 matrix) {
+	Ray ray = genPerspectiveRay(matrix);
 	return traceBruteForceColor(objectCount, objects, triangles, vertices, ray);
 }
 
@@ -24,11 +26,21 @@ Ray genOrthogonalRay() {
 }
 
 
-Ray genPerspectiveRay() {
+Ray genPerspectiveRay(float16 matrix) {
 	Ray ray;
+	/*const float v = 3.14159265f / 4;
 
-	ray.position = (float3)(0.0f, 0.0f, 7.0f);
+	float16 matrix = (float16)(
+		+cos(v), +0, +sin(v), +0,
+		+0, +1, +0, +0,
+		-sin(v), +0, +cos(v), +0,
+		+0, +0, +0, +1
+	);*/
+	
+	ray.position = mulMatVec(matrix, (float4)(0.0f, 0.0f, 7.0f, 1.0f)).xyz;
 
+	
+	
 	float sideToSide = (float)xIndex / width;
 	float topToBottom = (float)yIndex / height;
 
@@ -43,6 +55,8 @@ Ray genPerspectiveRay() {
 		)
 	);
 
+	ray.direction = mulMatVec(matrix, (float4)(ray.direction, 0.0f)).xyz;
+	
 	ray.inverseDirection = 1.0f / ray.direction;
 	return ray;
 }
@@ -55,7 +69,7 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	Triangle closestTriangle;
 	float2 closestUv;
 
-	for (int objectIndex = 1; objectIndex < objectCount; objectIndex++) {
+	for (int objectIndex = 0; objectIndex < objectCount; objectIndex++) {
 		
 		Object object = allObjects[objectIndex];
 		global const TriangleIndices* triangles = getTrianglesIndices(allTriangles, object);
@@ -84,7 +98,13 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	if(closestTriangleDist == FLT_MAX)
 		return result;
 
-	result = interpolateTriangle(closestTriangle, closestUv).color;
+	Vertex interpolated = interpolateTriangle(closestTriangle, closestUv);
+	
+	result = interpolated.color;
+	
+	float3 lightDir = normalize((float3)(-0.9, 0.5f, 0.2f));
+	result *= dot(interpolated.normal, -lightDir) * 0.5f + 0.5f;
+	
 	return result;//(float4)((float)(int)closestTriangleDist);
 }
 
@@ -132,6 +152,7 @@ float4 traceBruteForce(Ray ray, int objectCount, global const Object* allObjects
 Vertex interpolateTriangle(Triangle triangle, float2 uv){
 	Vertex result;
 	result.position = interpolate3(triangle.a.position, triangle.b.position, triangle.c.position, uv);
+	result.normal = interpolate3(triangle.a.normal, triangle.b.normal, triangle.c.normal, uv);
 	result.color = interpolate4(triangle.a.color, triangle.b.color, triangle.c.color, uv);
 	return result;
 }

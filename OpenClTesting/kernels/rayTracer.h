@@ -4,7 +4,7 @@
 #include "kernels/intersection.h"
 
 
-float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices);
+float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, float16 matrix);
 float4 traceBruteForce(Ray ray, int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Vertex* intersectionPoint);
 float4 traceBruteForceColor(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, Ray ray);
 
@@ -20,6 +20,6 @@ Triangle getTriangle(global const TriangleIndices* trianglesIndices, global cons
 
 
 Ray genOrthogonalRay();
-Ray genPerspectiveRay();
+Ray genPerspectiveRay(float16 matrix);
 
 #include "kernels/rayTracer.cl"

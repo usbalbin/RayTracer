@@ -10,6 +10,7 @@ float4 testColor();
 
 void kernel computeKernel(
 	int objectCount,
+	float16 matrix,
 	global const Object* objects,
 	global const TriangleIndices* triangles,
 	global const Vertex* vertices,
@@ -25,7 +26,7 @@ void kernel computeKernel(
 	//float4 color = (float4)(pos.x / 1024.0f, pos.y / 768.0f, 0, 1);
 	
 	
-	color = traceRay(objectCount, objects, triangles, vertices);
+	color = traceRay(objectCount, objects, triangles, vertices, matrix);
 	//color = testColor();
 	write_imagef(output, pos, color.xyzw);
 }

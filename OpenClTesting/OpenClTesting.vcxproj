@@ -158,6 +158,7 @@
     <ClInclude Include="ArraySlice.hpp" />
     <ClInclude Include="DebugRayTracer.hpp" />
     <ClInclude Include="intersection.hpp" />
+    <ClInclude Include="Meshes.hpp" />
     <ClInclude Include="OpenClRayTracer.hpp" />
     <ClInclude Include="Containers.hpp" />
     <ClInclude Include="OpenClContexts.hpp" />
@@ -169,6 +170,7 @@
   <ItemGroup>
     <ClCompile Include="DebugRayTracer.cpp" />
     <ClCompile Include="intersection.cpp" />
+    <ClCompile Include="Meshes.cpp" />
     <ClCompile Include="OpenClRayTracer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenClContexts.cpp" />
