@@ -14,6 +14,8 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 
 - Consider adding sorting step before Raytracer to improve performance
 
+- Consider "chaining" OpenCL kernels to free up some CPU-time and to help making other calculations on CPU without it having to launch kernel steps during rendering of image.
+
 ## WIP
 
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative http://www.geeksforgeeks.org/inorder-tree-traversal-without-recursion/
