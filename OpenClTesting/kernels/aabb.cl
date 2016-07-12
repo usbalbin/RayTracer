@@ -1,6 +1,8 @@
-#define gid get_gloabal_id(0)
+#include "kernels/containers.h"
 
-void kernel computeKernel(
+#define gid get_global_id(0)
+
+void kernel aabb(
 	//In
 	global const 
 	Vertex* vertices,
@@ -10,9 +12,15 @@ void kernel computeKernel(
 	
 ){
 	Object mesh = objects[gid];
+	float3 maxi, mini;
 	
-	for(int i = 0; i < object.numVertices; i++){
-		mesh.boundingBox.min = min(mesh.boundingBox.min, vertices[mesh.startVertex + i]);
-		mesh.boundingBox.max = max(mesh.boundingBox.max, vertices[mesh.startVertex + i]);
+	AABB aabb = mesh.boundingBox;
+	aabb.min = aabb.max = vertices[mesh.startVertex].position;
+	
+	for(int i = 1; i < mesh.numVertices; i++){
+		aabb.min = min(aabb.min, vertices[mesh.startVertex + i].position);
+		aabb.max = max(aabb.max, vertices[mesh.startVertex + i].position);
 	}
+	objects[gid].boundingBox = aabb;
+	
 }

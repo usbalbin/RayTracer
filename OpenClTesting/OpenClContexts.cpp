@@ -42,8 +42,14 @@ void OpenClContexts::initializeInteropGpu() {
 	std::cout << "-------------------------------" << std::endl;
 	std::vector<cl::Device> platformDevices;
 	for (int i = 0; i < numPlatforms; i++) {
-		platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &platformDevices);
-		for (auto device : platformDevices) {
+		try {
+			platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &platformDevices);
+		}
+		catch (cl::Error) {
+			continue;
+		}
+
+		for(auto device : platformDevices) {
 			gpuDevices.push_back(device);
 
 			std::cout << device.getInfo<CL_DEVICE_VENDOR>() << std::endl;
@@ -157,18 +163,18 @@ void OpenClContexts::initialize(int deviceType){
 	}
 }
 
-cl::Device OpenClContexts::getGpuDevice(int deviceNum){
+cl::Device& OpenClContexts::getGpuDevice(int deviceNum){
 	return gpuDevices[deviceNum];
 }
 
-cl::Context OpenClContexts::getGpuContext(int contextNum){
+cl::Context& OpenClContexts::getGpuContext(int contextNum){
 	return gpuContexts[contextNum];
 }
 
-cl::Device OpenClContexts::getCpuDevice(int deviceNum){
+cl::Device& OpenClContexts::getCpuDevice(int deviceNum){
 	return cpuDevices[deviceNum];
 }
 
-cl::Context OpenClContexts::getCpuContext(int contextNum){
+cl::Context& OpenClContexts::getCpuContext(int contextNum){
 	return cpuContexts[contextNum];
 }

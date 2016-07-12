@@ -1,5 +1,5 @@
-#include "math.h"
-
+#include "kernels/math.h"
+#include "kernels/intersection.h"
 
 #define xIndex get_global_id(0)
 #define yIndex get_global_id(1)
@@ -102,7 +102,7 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	
 	result = interpolated.color;
 	
-	float3 lightDir = normalize((float3)(-0.9, 0.5f, 0.2f));
+	float3 lightDir = normalize((float3)(-0.9f, 0.5f, 0.2f));
 	result *= dot(interpolated.normal, -lightDir) * 0.5f + 0.5f;
 	
 	return result;//(float4)((float)(int)closestTriangleDist);

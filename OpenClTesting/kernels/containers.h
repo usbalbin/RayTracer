@@ -40,4 +40,5 @@ typedef struct {
 	float16 modelMatrix;
 	int meshType;
 	int startVertex;
+	int padding0, padding1;
 } Instance;

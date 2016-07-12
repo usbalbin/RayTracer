@@ -1,5 +1,4 @@
-
-
+#pragma once
 
 float4 mulMatVec(float16 m, float4 v){
 	return (float4)(

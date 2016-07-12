@@ -57,3 +57,33 @@ struct Object {
 	int numTriangles;
 	int numVertices;
 };
+
+struct InstanceBuilder : public Object {
+	InstanceBuilder() {};
+	InstanceBuilder(Object object, int meshType) {
+		this->boundingBox = object.boundingBox;
+		this->startTriangle = object.startTriangle;
+		this->startVertex = object.startVertex;
+		this->numTriangles = object.numTriangles;
+		this->numVertices = object.numVertices;
+		this->meshType = meshType;
+	}
+	int meshType;
+};
+
+struct Instance {//TODO make sure aligment is same in C++ and OpenCL -version of struct
+	Instance() {};
+	Instance(float16 modelMatrix, InstanceBuilder builder) : modelMatrix(modelMatrix), meshType(builder.meshType) {};
+	Instance(InstanceBuilder builder) : meshType(builder.meshType) {
+		modelMatrix = float16(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		);
+	};
+	float16 modelMatrix;
+	int meshType;
+	int startVertex;
+	int padding[14];//TODO: try to find better solution to alignment issue
+} ;

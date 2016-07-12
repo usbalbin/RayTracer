@@ -8,7 +8,7 @@
 
 float4 testColor();
 
-void kernel computeKernel(
+void kernel rayTracer(
 	int objectCount,
 	float16 matrix,
 	global const Object* objects,

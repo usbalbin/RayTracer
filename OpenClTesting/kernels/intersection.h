@@ -1,3 +1,5 @@
+#pragma once
+
 #include "kernels/containers.h"
 
 #define EPSILON 0.0000001f

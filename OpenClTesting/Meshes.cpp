@@ -60,3 +60,27 @@ std::vector<TriangleIndices> genInvertedCubeIndices() {
 	};
 	return invertedCubeIndices;
 }
+
+//No normal support
+/*
+
+
+std::vector<Vertex> smallCubeVertices = {
+Vertex(float3(-side, -side, +side), float4(0.0f, 0.0f, 1.0f, 1.0f)),
+Vertex(float3(+side, -side, +side), float4(1.0f, 0.0f, 1.0f, 1.0f)),
+Vertex(float3(+side, +side, +side), float4(1.0f, 1.0f, 1.0f, 1.0f)),
+Vertex(float3(-side, +side, +side), float4(0.0f, 1.0f, 1.0f, 1.0f)),
+Vertex(float3(-side, -side, -side), float4(0.0f, 0.0f, 0.0f, 1.0f)),
+Vertex(float3(+side, -side, -side), float4(1.0f, 0.0f, 0.0f, 1.0f)),
+Vertex(float3(+side, +side, -side), float4(1.0f, 1.0f, 0.0f, 1.0f)),
+Vertex(float3(-side, +side, -side), float4(0.0f, 1.0f, 0.0f, 1.0f))
+};
+
+std::vector<TriangleIndices> cubeTriangleIndices = {
+TriangleIndices(0, 1, 2), TriangleIndices(2, 3, 0),
+TriangleIndices(3, 2, 6), TriangleIndices(6, 7, 3),
+TriangleIndices(7, 6, 5), TriangleIndices(5, 4, 7),
+TriangleIndices(4, 0, 3), TriangleIndices(3, 7, 4),
+TriangleIndices(0, 1, 5), TriangleIndices(5, 4, 0),
+TriangleIndices(1, 5, 6), TriangleIndices(6, 2, 1)
+};*/

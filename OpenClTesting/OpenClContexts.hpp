@@ -10,10 +10,10 @@ class OpenClContexts {
 		void initializeGpu();
 		void initializeCpu();
 		void initializeInteropGpu();
-		cl::Device getGpuDevice(int deviceNum);
-		cl::Context getGpuContext(int contextNum);
-		cl::Device getCpuDevice(int deviceNum);
-		cl::Context getCpuContext(int contextNum);
+		cl::Device& getGpuDevice(int deviceNum);
+		cl::Context& getGpuContext(int contextNum);
+		cl::Device& getCpuDevice(int deviceNum);
+		cl::Context& getCpuContext(int contextNum);
 		int getGpuContextCount();
 		int elementCount = 0;
 	

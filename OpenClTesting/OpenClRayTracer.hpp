@@ -2,6 +2,7 @@
 
 #include "ArraySlice.hpp"
 #include "Containers.hpp"
+#include "OpenGlShaders.hpp"
 
 #include <vector>
 #include "CL\cl.hpp"
@@ -11,49 +12,75 @@
 class OpenClRayTracer
 {
 public:
-	OpenClRayTracer(int width, int height, cl::Context context, cl::Device device, int maxObjectCount, int maxTriangleCount, int maxVertexCount, GLuint openGlTextureID);
+	OpenClRayTracer(int width, int height, int maxInstanceCount, int maxTotalVertexCount);
 	~OpenClRayTracer();
-	Object push_back(std::vector<TriangleIndices>& trianglesIndices, std::vector<Vertex>& vertices);
-	ArraySlice<TriangleIndices> getTriangles(Object object);
-	ArraySlice<Vertex> getVertices(Object object);
 
-	AABB generateAABB(Vertex* vertices, int vertexCount);
-	inline AABB OpenClRayTracer::generateAABB(std::vector<Vertex> vector);
+	void clear();
+	void push_back(Instance instance);
+	Instance pop_instance();
 
-	void writeToBuffers();
+	InstanceBuilder push_backObjectType(std::vector<TriangleIndices>& objectTypeIndices, std::vector<Vertex>& objectTypeVertices);
 
-	void resize();
-	void resize(int maxObjectCount, int maxTriangleCount, int maxVertexCount);
+	
+	//ArraySlice<TriangleIndices> getTriangles(Object object);	// Doing stuff to thise object type will alter every instance of this object type once the buffers are updated
+	//ArraySlice<Vertex> getVertices(Object object);			// Not yet implemented
 
+	void writeToObjectTypeBuffers();
+
+	void writeToInstanceBuffer();
+
+	cl::Event vertexShaderNonBlocking();
+
+	void autoResize();
+	void autoResizeObjectTypes();
+	void reserve(int maxInstanceCount, int maxTotalVertexCount);
 
 	void computeOnCPU();
-	cl::Event computeNonBlocking(float16 matrix);
-	void compute(float16 matrix);
-	void fetchResult();
-	cl::Event debug(float16 matrix);
+	cl::Event aabbNonBlocking();
+	cl::Event prepRayTraceNonBlocking();
+	cl::Event rayTraceNonBlocking(float16 matrix);
+	void sizeofDebug();
+	void rayTrace(float16 matrix);
+	void fetchRayTracerResult();
+
+	GLFWwindow* getWindow() {return renderer.getWindow();}
 
 private:
-	void initialize(cl::Context context, cl::Device device);
-	void resizeArrays(int maxObjectCount, int maxTriangleCount, int maxVertexCount);
-	void resizeBuffers(int maxObjectCount, int maxTriangleCount, int maxVertexCount);
+	void initialize();
+	void reserveArrays(int maxInstanceCount);
+	void reserveObjectTypeBuffers(int maxObjectTypeCount, int maxObjectTypeTriangleCount, int maxObjectTypeVertexCount);
+	void reserveBuffers(int maxObjectCount, int maxVertexCount);
 
-	std::vector<Object> objects;
-	std::vector<TriangleIndices> triangles;
-	std::vector<Vertex> vertices;
-	std::vector<float4> result;
+	std::vector<Object> objectTypes;
+	std::vector<TriangleIndices> objectTypeIndices;
+	std::vector<Vertex> objectTypeVertices;
+	std::vector<Instance> objectInstances;
 
-	cl::Kernel computeKernel;
+	unsigned transformedVertexCount = 0;
+
+	cl::Kernel vertexShaderKernel;
+	cl::Kernel aabbKernel;
+	cl::Kernel rayTraceKernel;
+	cl::Kernel sizeofKernel;
 	cl::Context context;
 	cl::CommandQueue queue;
 
-	cl::Buffer objectBuffer;
-	cl::Buffer triangleBuffer;
-	cl::Buffer vertexBuffer;
+
+	cl::Buffer objectTypeBuffer;
+	cl::Buffer objectTypeIndexBuffer;
+	cl::Buffer objectTypeVertexBuffer;
+
+	cl::Buffer objectInstanceBuffer;
+	cl::Buffer transformedObjectBuffer;
+	cl::Buffer transformedVertexBuffer;
 	std::vector<cl::Memory> resultImages;// Has to be vector even though there is only one element due to queue.enqueueAcquireGLObjects
+	
+	OpenGlShaders renderer;
 	GLuint openGlTextureID;
 
 	int width;
 	int height;
+
 	
 };
 
