@@ -231,7 +231,7 @@ cl::Event OpenClRayTracer::vertexShaderNonBlocking() {
 
 	queue.enqueueNDRangeKernel(vertexShaderKernel, cl::NullRange, cl::NDRange(objectInstances.size()), cl::NullRange, 0, &event);
 
-	/*
+	
 	//debug
 	event.wait();
 
@@ -242,7 +242,7 @@ cl::Event OpenClRayTracer::vertexShaderNonBlocking() {
 	queue.enqueueReadBuffer(objectInstanceBuffer, CL_TRUE, 0, sizeof(Instance) * insts.size(), insts.data());
 	
 	queue.finish();
-	*/
+	
 	return event;
 
 }
@@ -257,15 +257,6 @@ cl::Event OpenClRayTracer::aabbNonBlocking() {
 		std::cout << "Failed to set argument" << std::endl;
 		exit(1);
 	}
-	/*
-	if (aabbKernel.setArg(0, objectTypeVertexBuffer) != CL_SUCCESS) {
-		std::cout << "Failed to set argument" << std::endl;
-		exit(1);
-	}
-	if (aabbKernel.setArg(1, objectTypeBuffer) != CL_SUCCESS) {
-		std::cout << "Failed to set argument" << std::endl;
-		exit(1);
-	}*/
 
 	queue.finish();
 

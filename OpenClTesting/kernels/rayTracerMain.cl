@@ -16,7 +16,7 @@ void kernel rayTracer(
 	global const Vertex* vertices,
 	__write_only image2d_t output
 ){
-	int2 pos = (int2)(get_global_id(0),get_global_id(1));
+	int2 pos = (int2)(xIndex, height - yIndex);
 	float4 color;
 	
 	//if(pos.x < 15 || pos.x > width - 15 - 1)

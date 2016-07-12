@@ -74,14 +74,7 @@ struct InstanceBuilder : public Object {
 struct Instance {//TODO make sure aligment is same in C++ and OpenCL -version of struct
 	Instance() {};
 	Instance(float16 modelMatrix, InstanceBuilder builder) : modelMatrix(modelMatrix), meshType(builder.meshType) {};
-	Instance(InstanceBuilder builder) : meshType(builder.meshType) {
-		modelMatrix = float16(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		);
-	};
+
 	float16 modelMatrix;
 	int meshType;
 	int startVertex;

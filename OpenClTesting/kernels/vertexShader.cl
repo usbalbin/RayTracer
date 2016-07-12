@@ -39,10 +39,9 @@ void kernel vertexShader(
 }
 
 Vertex transformVertex(float16 matrix, Vertex vertex){
-	Vertex result;
-	result = vertex;
+	Vertex result = vertex;
 	
-	/*result.position = mulMatVec(
+	result.position = mulMatVec(
 		matrix,
 		(float4)(vertex.position, 1.0f)
 	).xyz;
@@ -50,6 +49,6 @@ Vertex transformVertex(float16 matrix, Vertex vertex){
 	result.normal = mulMatVec(
 		matrix,
 		(float4)(vertex.normal, 0.0f)
-	).xyz;*/
-	return vertex;
+	).xyz;
+	return result;
 }

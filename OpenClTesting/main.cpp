@@ -7,6 +7,7 @@
 #include "OpenClContexts.hpp"
 #include "OpenGlShaders.hpp"
 #include "Meshes.hpp"
+#include "glm\gtc\matrix_transform.hpp"
 
 int main()
 {
@@ -14,8 +15,8 @@ int main()
 	int height = 768;
 
 
-	int maxInstanceCount = 4;
-	int maxTotalVertexCount = 54;
+	int maxInstanceCount = 8;
+	int maxTotalVertexCount = 129;
 	int maxObjectTypeCount = 4;
 	int maxObjectTypeVertexCount = 54;
 
@@ -44,7 +45,7 @@ int main()
 		cubeTypeBuilder = openClRayTracer.push_backObjectType(genCubeIndices(), genCubeVertices(0.5f));
 		//object = openClRayTracer.push_back(cubeTriangleIndices, smallCubeVertices);
 
-		openClRayTracer.reserve(4, 22);
+		openClRayTracer.reserve(maxInstanceCount, maxTotalVertexCount);
 		openClRayTracer.autoResizeObjectTypes();
 		openClRayTracer.writeToObjectTypeBuffers();
 	}
@@ -55,19 +56,30 @@ int main()
 
 	float v = 0;//3.14159265f / 1.0f;
 	while (!glfwWindowShouldClose(window)) {
-		float16 cameraMatrix{
+		float16 cameraMatrix = float16(1.0f);/*{
 			+cos(v), +0, +sin(v), +0,
 			+0, +1, +0, +0,
 			-sin(v), +0, +cos(v), +0,
 			+0, +0, +0, +1
-		};
+		};*/
+		cameraMatrix = glm::rotate(float16(1.0f), v, float3(0, 1.0f, 0));
+
+
 		openClRayTracer.clear();
-		openClRayTracer.push_back(Instance(triLowerTypeBuilder));
-		openClRayTracer.push_back(Instance(triTypeBuilder));
-		openClRayTracer.push_back(Instance(invertedCubeTypeBuilder));
-		openClRayTracer.push_back(Instance(cubeTypeBuilder));
-		
-		
+		openClRayTracer.push_back(Instance(float16(1.0f), triLowerTypeBuilder));
+		openClRayTracer.push_back(Instance(float16(1.0f), triTypeBuilder));
+		openClRayTracer.push_back(Instance(glm::translate(float16(2.0f), float3(1.0f, -1.0f, -0.5f)), triTypeBuilder));
+		openClRayTracer.push_back(Instance(float16(1.0f), invertedCubeTypeBuilder));
+		openClRayTracer.push_back(Instance(float16(1.0f), cubeTypeBuilder));
+		openClRayTracer.push_back(Instance(glm::translate(float16(1.2f), float3(0.0f, 2.0f, 1.5f)), cubeTypeBuilder));
+		openClRayTracer.push_back(Instance(
+			glm::translate(float16(0.70f), float3(0.0f, 2.0f * sin(50.0f * v), 3.0f)),
+			cubeTypeBuilder
+		));
+		openClRayTracer.push_back(Instance(
+			glm::rotate(glm::translate(float16(1.0f), float3(2.0f, 0.0f, 0.0f)), v * 3.5f, float3(0, 0, 1)),
+			cubeTypeBuilder
+		));
 
 		
 		cl::Event event;
