@@ -87,7 +87,7 @@ void OpenClRayTracer::initialize() {
 
 void OpenClRayTracer::autoResize() {
 	reserveArrays(objectInstances.size());
-	reserveBuffers(objectTypes.size(), objectTypeVertices.size());
+	reserveBuffers(objectInstances.size(), transformedVertexCount);
 }
 
 void OpenClRayTracer::autoResizeObjectTypes() {

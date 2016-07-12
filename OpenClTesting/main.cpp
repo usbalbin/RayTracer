@@ -15,8 +15,8 @@ int main()
 	int height = 768;
 
 
-	int maxInstanceCount = 8;
-	int maxTotalVertexCount = 129;
+	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
+	int maxTotalVertexCount = 3;// 129; //Same here
 	int maxObjectTypeCount = 4;
 	int maxObjectTypeVertexCount = 54;
 
@@ -80,6 +80,8 @@ int main()
 			glm::rotate(glm::translate(float16(1.0f), float3(2.0f, 0.0f, 0.0f)), v * 3.5f, float3(0, 0, 1)),
 			cubeTypeBuilder
 		));
+
+		openClRayTracer.autoResize();//TODO: this is rather expensive, remove me if possible 
 
 		
 		cl::Event event;
