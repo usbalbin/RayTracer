@@ -108,47 +108,6 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	return result;//(float4)((float)(int)closestTriangleDist);
 }
 
-float4 traceBruteForce(Ray ray, int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Vertex* intersectionPoint) {
-	float4 result = (float4)(0, 0, 0, 1);
-	
-	float closestTriangleDist = FLT_MAX;
-	Triangle closestTriangle;
-	float2 closestUv;
-
-	for (int objectIndex = 0; objectIndex < objectCount; objectIndex++) {
-		
-		Object object = allObjects[objectIndex];
-		global const TriangleIndices* triangles = getTrianglesIndices(allTriangles, object);
-		global const Vertex* vertices = getVertices(allVertices, object);
-		
-		float nearDistacnce, farDistance;
-		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance))
-			continue;
-
-		result.x = 1;
-		//return (float4)(1.0f, 0.0f, 0.0f, 1.0f);
-		for (int triangleIndex = 0; triangleIndex < object.numTriangles; triangleIndex++) {
-			Triangle triangle = getTriangle(triangles, vertices, object, triangleIndex);
-
-			float distance;
-			float2 uv;
-			if (intersectsTriangle(ray, triangle, &distance, &uv) && distance < closestTriangleDist) {
-				closestTriangleDist = distance;
-				closestTriangle = triangle;
-				closestUv = uv;
-			}
-		}
-
-	}
-	
-	if(closestTriangleDist == FLT_MAX)
-		return result;
-
-	*intersectionPoint = interpolateTriangle(closestTriangle, closestUv);
-	
-	return intersectionPoint->color;//(float4)((float)(int)closestTriangleDist);
-}
-
 Vertex interpolateTriangle(Triangle triangle, float2 uv){
 	Vertex result;
 	result.position = interpolate3(triangle.a.position, triangle.b.position, triangle.c.position, uv);

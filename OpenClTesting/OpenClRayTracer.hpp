@@ -39,8 +39,10 @@ public:
 	cl::Event aabbNonBlocking();
 	cl::Event prepRayTraceNonBlocking();
 	cl::Event rayTraceNonBlocking(float16 matrix);
+	cl::Event iterativeRayTraceNonBlocking(float16 matrix);
 	void sizeofDebug();
 	void rayTrace(float16 matrix);
+	void iterativeRayTrace(float16 matrix);
 	void fetchRayTracerResult();
 
 	GLFWwindow* getWindow() {return renderer.getWindow();}
@@ -61,6 +63,7 @@ private:
 	cl::Kernel vertexShaderKernel;
 	cl::Kernel aabbKernel;
 	cl::Kernel rayTraceKernel;
+	cl::Kernel iterativeRayTracerKernel;
 	cl::Kernel sizeofKernel;
 	cl::Context context;
 	cl::CommandQueue queue;

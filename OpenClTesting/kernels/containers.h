@@ -1,7 +1,25 @@
 #pragma once
 
 //Always use largest type first in structs shared by host, also make sure they are defined AND aligned the same
+/*
+typedef union {
+	struct {
+		float4 color;
+		float4 properties;
+	};
+	struct {
+		float red; 
+		float green;
+		float blue;
+		float padding;
 
+		float refract;
+		float reflect;
+		float refractIndex;
+		float reflectDuffusion;
+	};
+	
+}Color;*/
 
 typedef struct {
 	float4 color;

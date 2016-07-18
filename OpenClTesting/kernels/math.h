@@ -1,4 +1,5 @@
 #pragma once
+#include "kernels/containers.h"
 
 float4 mulMatVec(float16 m, float4 v){
 	return (float4)(
@@ -19,3 +20,16 @@ float16 mulMat_old(float16 m1, float16 m2){
 	);
 }
 */
+
+Ray reflect(Ray rayIn, Vertex poi){
+	const float epsilon = 1e-12f;
+	
+	Ray result;
+	
+	//Move position along normal slightly to prevent collision with reflector
+	result.position = poi.position + epsilon * poi.normal;
+	result.direction = rayIn.direction - 2.0f * poi.normal * dot(rayIn.direction, poi.normal);
+	result.inverseDirection = 1.0f / result.direction;
+	
+	return result;
+}

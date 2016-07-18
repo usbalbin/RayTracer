@@ -20,7 +20,6 @@ int main()
 	int maxObjectTypeCount = 4;
 	int maxObjectTypeVertexCount = 54;
 
-
 	OpenClRayTracer openClRayTracer(width, height, maxInstanceCount, maxTotalVertexCount);
 	GLFWwindow* window = openClRayTracer.getWindow();
 	//openClRayTracer.sizeofDebug();
@@ -56,16 +55,17 @@ int main()
 
 	float v = 0;//3.14159265f / 1.0f;
 	while (!glfwWindowShouldClose(window)) {
-		float16 cameraMatrix = float16(1.0f);/*{
-			+cos(v), +0, +sin(v), +0,
-			+0, +1, +0, +0,
-			-sin(v), +0, +cos(v), +0,
-			+0, +0, +0, +1
-		};*/
-		cameraMatrix = glm::rotate(float16(1.0f), v, float3(0, 1.0f, 0));
+		//Set up a matrix for the cameras position and orientation
+		//Note!: Unlike OpenGL/Direct3D this matrix does not hold any perspective or projection information, 
+		//ONLY the cameras position and orientation!
+		float16 cameraMatrix = glm::rotate(float16(1.0f), v, float3(0, 1.0f, 0));
+		//TODO make sure camera is centered when using identity matrix(kernel code in genPerspectiveRay() in rayTrace.cl)
 
 
+		//Clear list of old stuff to drow from previous frame
 		openClRayTracer.clear();
+
+		//Add new stuff to draw for current frame
 		openClRayTracer.push_back(Instance(float16(1.0f), triLowerTypeBuilder));
 		openClRayTracer.push_back(Instance(float16(1.0f), triTypeBuilder));
 		openClRayTracer.push_back(Instance(glm::translate(float16(2.0f), float3(1.0f, -1.0f, -0.5f)), triTypeBuilder));
@@ -81,14 +81,32 @@ int main()
 			cubeTypeBuilder
 		));
 
+		//Resize buffers to fit the stuff to be drawn,
+		//only needs to be callen when more/larger stuff has been added since last resize
 		openClRayTracer.autoResize();//TODO: this is rather expensive, remove me if possible 
-
 		
+
+
+
+
+		//-----<Prepare and perform Ray Tracing>
+		
+		//Create event to know when we are done prepping
 		cl::Event event;
+
+		//Start the preparations where we will be transforming objects to world coordinates etc.
 		event = openClRayTracer.prepRayTraceNonBlocking();
+
+		//Whait for the preparations to finnish
 		event.wait();
 		
-		openClRayTracer.rayTrace(cameraMatrix);
+		//Start the actual Ray Tracing and draw result to the screen
+		//openClRayTracer.rayTrace(cameraMatrix);
+		openClRayTracer.iterativeRayTrace(cameraMatrix);
+
+		//-----</>
+
+		//Increment angle value
 		v += 1e-2f;
 	}
 	//system("pause");

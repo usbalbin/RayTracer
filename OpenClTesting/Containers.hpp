@@ -13,12 +13,51 @@ typedef glm::mat4 float16;
 typedef glm::vec2 float2;
 typedef glm::vec3 float3;
 typedef glm::vec4 float4;
+/*
+union Color {
+	Color() {}
+	Color(float3 color) : color(color, 0.0f), properties(0.0f, 0.0f, 1.0f, 0.0f) {}
+	Color(float4 color) : color(color), properties(0.0f, 0.0f, 1.0f, 0.0f) {}
+	Color(float3 color, float4 properties) : color(color, 0.0f), properties(properties) {}
+	Color(float4 color, float4 properties) : color(color), properties(properties) {}
+	Color(float3 color, float refraction, float reflection, float refractionIndex, float reflectiveDiffusion) : color(color, 0.0f) {
+		this->refract = refraction;
+		this->reflect = reflection;
+		this->refractIndex = refractionIndex;
+		this->reflectDuffusion = reflectiveDiffusion;
+	}
+	Color(float4 color, float refraction, float reflection, float refractionIndex, float reflectiveDiffusion) : color(color) {
+		this->refract = refraction;
+		this->reflect = reflection;
+		this->refractIndex = refractionIndex;
+		this->reflectDuffusion = reflectiveDiffusion;
+	}
 
+
+	struct {
+		float4 color;
+		float4 properties;
+	};
+	struct {
+		float red; 
+		float green;
+		float blue;
+		float padding;
+
+		float refract;
+		float reflect;
+		float refractIndex;
+		float reflectDuffusion;
+	};
+	
+};
+
+*/
 struct Vertex {
 	Vertex() {}
-	Vertex(float3 position) : position(position), color(0.0f){}
-	Vertex(float3 position, float4 color) : position(position), color(color) {}
+	Vertex(float3 position, float4 color) : position(position), color(color), normal(0.0f) {}
 	Vertex(float3 position, float4 color, float3 normal) : position(position), color(color), normal(normal) {}
+	//Vertex(float3 position, Color color, float3 normal) : position(position), color(color), normal(normal) {}
 	float4 color;
 	__declspec(align(4 * sizeof(float))) float3 normal;
 	__declspec(align(4 * sizeof(float))) float3 position;

@@ -5,7 +5,6 @@
 
 
 float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, float16 matrix);
-float4 traceBruteForce(Ray ray, int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Vertex* intersectionPoint);
 float4 traceBruteForceColor(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, Ray ray);
 
 Vertex interpolateTriangle(Triangle triangle, float2 uv);

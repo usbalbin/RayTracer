@@ -9,6 +9,13 @@
 
 #include <iostream>
 
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif // _WIN32
+
+
 
 OpenClRayTracer::OpenClRayTracer(int width, int height,
 	int maxInstanceCount, int maxTotalVertexCount) : 
@@ -39,11 +46,13 @@ void OpenClRayTracer::initialize() {
 	std::string vertexShaderSource = readFileToString("kernels/vertexShader.cl");
 	std::string aabbSource = readFileToString("kernels/aabb.cl");
 	std::string rayTracerSource = readFileToString("kernels/rayTracerMain.cl");
+	std::string iterativeRayTracerSource = readFileToString("kernels/iterativeDepth.cl");
 	std::string sizeofSource = readFileToString("kernels/sizeof.cl");
 
 	sources.push_back({ vertexShaderSource.c_str(), vertexShaderSource.length() });
 	sources.push_back({ aabbSource.c_str(), aabbSource.length() });
 	sources.push_back({ rayTracerSource.c_str(), rayTracerSource.length() });
+	sources.push_back({ iterativeRayTracerSource.c_str(), iterativeRayTracerSource.length() });
 	sources.push_back({ sizeofSource.c_str(), sizeofSource.length() });
 
 
@@ -53,8 +62,14 @@ void OpenClRayTracer::initialize() {
 
 	std::cout << "---------------- Compilation status ----------------" << std::endl;
 	std::string compileMessage;
+	char programPathBuffer[256];
+	getcwd(programPathBuffer, 256);
+	std::string programPath = programPathBuffer;
+
+	std::string options = "";// "-cl-unsafe-math-optimizations -cl-fast-relaxed-math";
+
 	try {
-		program.build({ device });
+		program.build({ device }, (options + "-I " + programPath).c_str());
 	}catch(cl::Error e){
 		compileMessage = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
 		std::cout << "Failed to compile with status " << e.err() << ": " << compileMessage << std::endl;
@@ -71,6 +86,7 @@ void OpenClRayTracer::initialize() {
 	vertexShaderKernel = cl::Kernel(program, "vertexShader", &status);
 	aabbKernel = cl::Kernel(program, "aabb", &status);
 	rayTraceKernel = cl::Kernel(program, "rayTracer", &status);
+	iterativeRayTracerKernel = cl::Kernel(program, "iterative", &status);
 	sizeofKernel = cl::Kernel(program, "debug", &status);
 
 	if (status != CL_SUCCESS) {
@@ -190,6 +206,10 @@ void OpenClRayTracer::rayTrace(float16 matrix) {
 	fetchRayTracerResult();
 }
 
+void OpenClRayTracer::iterativeRayTrace(float16 matrix) {
+	iterativeRayTraceNonBlocking(matrix).wait();
+	fetchRayTracerResult();
+}
 
 void OpenClRayTracer::computeOnCPU()
 {
@@ -339,6 +359,65 @@ cl::Event OpenClRayTracer::rayTraceNonBlocking(float16 matrix) {
 	cl::Event event;
 
 	queue.enqueueNDRangeKernel(rayTraceKernel, cl::NullRange, cl::NDRange(width, height), cl::NullRange, 0, &event);
+
+
+	return event;
+}
+
+cl::Event OpenClRayTracer::iterativeRayTraceNonBlocking(float16 matrix) {
+
+
+	//Make sure OpenGL is done working
+	glFinish();
+
+	//Take ownership of OpenGL texture
+	if (queue.enqueueAcquireGLObjects(&resultImages, NULL, NULL) != CL_SUCCESS) {
+		std::cout << "Failed to acquire result Texture from OpenGL" << std::endl;
+		exit(1);
+	}
+	queue.finish();//Make sure OpenCL has grabbed the texture from GL(probably not needed)
+
+
+	int instanceCount = objectInstances.size();
+	if (iterativeRayTracerKernel.setArg(0, sizeof(instanceCount), &instanceCount) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+	if (iterativeRayTracerKernel.setArg(1, sizeof(float16), &matrix) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+	if (iterativeRayTracerKernel.setArg(2, transformedObjectBuffer) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+	if (iterativeRayTracerKernel.setArg(3, objectTypeIndexBuffer) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+	if (iterativeRayTracerKernel.setArg(4, transformedVertexBuffer) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+	if (iterativeRayTracerKernel.setArg(5, resultImages[0]) != CL_SUCCESS) {
+		std::cout << "Failed to set argument" << std::endl;
+		exit(1);
+	}
+
+	/*
+	int objectCount = objectTypes.size();
+	rayTraceKernel.setArg(0, sizeof(objectCount), &objectCount);
+	rayTraceKernel.setArg(1, sizeof(float16), &matrix);
+	rayTraceKernel.setArg(2, objectTypeBuffer);
+	rayTraceKernel.setArg(3, objectTypeIndexBuffer);
+	rayTraceKernel.setArg(4, objectTypeVertexBuffer);
+	rayTraceKernel.setArg(5, resultImages[0]);
+	*/
+	queue.finish();
+
+	cl::Event event;
+
+	queue.enqueueNDRangeKernel(iterativeRayTracerKernel, cl::NullRange, cl::NDRange(width, height), cl::NullRange, 0, &event);
 
 
 	return event;
