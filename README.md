@@ -18,7 +18,8 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 
 ## WIP
 
-- Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative http://www.geeksforgeeks.org/inorder-tree-traversal-without-recursion/
+- Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative through multiple kernels calls. One kernel for tracing rays and one for producing reflection/refraction rays on impacts. Repetedly call these
+ multiple times and then collect the result through a third kernel.
 
 - Add a vertex-shader like step before the actual ray tracing. This step should translate every vertex in each mesh by a 4x4 model matrix.
 
