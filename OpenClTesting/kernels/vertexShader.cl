@@ -19,7 +19,10 @@ void kernel vertexShader(
 	Instance instance = instances[gid];
 	Object objectType = objectTypes[instance.meshType];
 	float16 modelMatrix = instance.modelMatrix;
-	
+
+	/*if(gid == 0){
+		printf("instances[1].startTriangle: %d\n", instances[1].startVertex);
+	}*/
 	
 	Object mesh;
 	mesh.startTriangle = objectType.startTriangle;

@@ -1,0 +1,46 @@
+
+
+
+
+void render(){
+	
+	std::vector<cl::Buffer> rayBuffers(max + 1);
+	std::vector<cl::Buffer> rayTreeBuffers(max);
+	std::vector<cl::Buffer> hitBuffers(max);
+	
+	
+	for(int i = 0; i < max; i++){
+		rayBuffers.push_back(cl::Buffer(sizeof(Ray) * width * height * (1 << i)));
+		rayTreeBuffers.push_back(cl::Buffer(sizeof(RayTree) * width * height * (1 << i)));
+		hitBuffers.push_back(cl::Buffer(sizeof(Hit) * width * height * (1 << i)));
+	}
+	rayBuffers.push_back(cl::Buffer(sizeof(Ray) * width * height * (1 << max)));
+	
+	
+	perspectiveRayGenerator.setArg(0, cameraMatrix);
+	perspectiveRayGenerator.setArg(1, rayBuffers[0]);
+	invoke perspectiveRayGenerator
+	
+	int i;
+	for(i = 0; i < max; i++){
+		rayTracer.setArg(4, rayBuffers[i])
+		rayTracer.setArg(5, hitBuffers[i])
+		invoke rayTracer
+		
+		rayGenerator.setArg(0, hitBuffers[i])
+		rayGenerator.setArg(2, rayBuffers[i + 1])
+		rayGenerator.setArg(3, rayTreeBuffers[i]);
+		invoke rayGenerator
+		
+	}
+	
+	for(i--; i > 0; i--){
+		treeTraverser.setArg(0, rayTreeBuffers[i - 1]);
+		treeTraverser.setArg(1, rayTreeBuffers[i]);
+		invoke treeTraverser
+	}
+	
+	colorToPixel.setArg(0, rayTreeBuffers[0]);
+	colorToPixel.setArg(1, glTexture);
+	invoke colorToPixel
+}

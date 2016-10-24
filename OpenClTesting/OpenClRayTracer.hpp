@@ -39,13 +39,17 @@ public:
 	cl::Event aabbNonBlocking();
 	cl::Event prepRayTraceNonBlocking();
 	cl::Event rayTraceNonBlocking(float16 matrix);
-	cl::Event iterativeRayTraceNonBlocking(float16 matrix);
 	void sizeofDebug();
 	void rayTrace(float16 matrix);
 	void iterativeRayTrace(float16 matrix);
 	void fetchRayTracerResult();
 
+	void initializeAdvancedRender();
+
 	GLFWwindow* getWindow() {return renderer.getWindow();}
+	void advancedRender(float16 matrix);
+
+	void resizeCallback(GLFWwindow * window, int width, int height);
 
 private:
 	void initialize();
@@ -65,6 +69,13 @@ private:
 	cl::Kernel rayTraceKernel;
 	cl::Kernel iterativeRayTracerKernel;
 	cl::Kernel sizeofKernel;
+
+	cl::Kernel perspectiveRayGeneratorKernel;
+	cl::Kernel rayTraceAdvancedKernel;
+	cl::Kernel rayGeneratorKernel;
+	cl::Kernel treeTraverserKernel;
+	cl::Kernel colorToPixelKernel;
+
 	cl::Context context;
 	cl::CommandQueue queue;
 
@@ -76,6 +87,12 @@ private:
 	cl::Buffer objectInstanceBuffer;
 	cl::Buffer transformedObjectBuffer;
 	cl::Buffer transformedVertexBuffer;
+
+	std::vector<cl::Buffer> rayBuffers;
+	std::vector<cl::Buffer> rayTreeBuffers;
+	std::vector<cl::Buffer> hitBuffers;
+
+
 	std::vector<cl::Memory> resultImages;// Has to be vector even though there is only one element due to queue.enqueueAcquireGLObjects
 	
 	OpenGlShaders renderer;

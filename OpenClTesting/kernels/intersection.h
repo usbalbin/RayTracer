@@ -69,8 +69,8 @@ bool intersectsTriangle(const Ray ray, const Triangle tri, float* dist, float2* 
 	if (tempDist > EPSILON)
 	{ //ray intersection
 		*dist = tempDist;
-		UV->x = u;
-		UV->y = v;
+		(*UV).x = u;
+		(*UV).y = v;
 		return true;
 	} // No hit, no win
 	return false;

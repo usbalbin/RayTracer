@@ -93,7 +93,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);__CL_ENABLE_EXCEPTIONS</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AMDAPPSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,13 +109,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);GLM_SWIZZLE;__CL_ENABLE_EXCEPTIONS</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AMDAPPSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)\lib\x64;../dependencies/libs/x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;../dependencies/libs/x64/glfw/glfw3.lib;../dependencies/libs/x64/glfw/glfw3dll.lib;../dependencies/libs/x64/glew/glew32s.lib;$(INTELOCLSDKROOT)\lib\x64\OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AMDAPPSDKROOT)\lib\x86_64;../dependencies/libs/x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;../dependencies/libs/x64/glfw/glfw3.lib;../dependencies/libs/x64/glfw/glfw3dll.lib;../dependencies/libs/x64/glew/glew32s.lib;$(AMDAPPSDKROOT)\lib\x86_64\OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -127,7 +127,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);__CL_ENABLE_EXCEPTIONS</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AMDAPPSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,15 +147,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);GLM_SWIZZLE;__CL_ENABLE_EXCEPTIONS</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AMDAPPSDKROOT)/include;../dependencies/includes</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)\lib\x64;../dependencies/libs/x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;../dependencies/libs/x64/glfw/glfw3.lib;../dependencies/libs/x64/glfw/glfw3dll.lib;../dependencies/libs/x64/glew/glew32s.lib;$(INTELOCLSDKROOT)\lib\x64\OpenCL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AMDAPPSDKROOT)\lib\x86_64;../dependencies/libs/x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;../dependencies/libs/x64/glfw/glfw3.lib;../dependencies/libs/x64/glfw/glfw3dll.lib;../dependencies/libs/x64/glew/glew32s.lib;$(AMDAPPSDKROOT)\lib\x86_64\OpenCL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

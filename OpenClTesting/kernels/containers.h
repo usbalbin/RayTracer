@@ -34,6 +34,19 @@ typedef struct {
 }Ray;
 
 typedef struct {
+	Vertex vertex;
+	Ray ray;
+} Hit;
+
+typedef struct {
+	float4 color;
+	int reflectIndex;
+	int refractIndex;
+	float reflectFactor;
+	float refractFactor;
+} RayTree;
+
+typedef struct {
 	Vertex a, b, c;
 } Triangle;
 

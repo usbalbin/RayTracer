@@ -11,6 +11,8 @@ void kernel aabb(
 	global Object* objects
 	
 ){
+	
+	
 	Object mesh = objects[gid];
 	float3 maxi, mini;
 	

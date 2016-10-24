@@ -65,10 +65,11 @@ struct Vertex {
 };
 
 struct Ray {
-	float3 position;
-	float3 direction;
-	float3 inverseDirection;//inverseDirection = 1.0f / direction;
+	__declspec(align(4 * sizeof(float))) float3 position;
+	__declspec(align(4 * sizeof(float))) float3 direction;
+	__declspec(align(4 * sizeof(float))) float3 inverseDirection;//inverseDirection = 1.0f / direction;
 };
+
 
 struct Triangle {
 	Triangle() {}
@@ -119,3 +120,16 @@ struct Instance {//TODO make sure aligment is same in C++ and OpenCL -version of
 	int startVertex;
 	int padding[14];//TODO: try to find better solution to alignment issue
 } ;
+
+struct Hit {
+	Vertex vertex;
+	Ray ray;
+};
+
+struct RayTree {
+	float4 color;
+	int reflectIndex;
+	int refractIndex;
+	float reflectFactor;
+	float refractFactor;
+};

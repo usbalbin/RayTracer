@@ -21,8 +21,11 @@ float16 mulMat_old(float16 m1, float16 m2){
 }
 */
 
-Ray reflect(Ray rayIn, Vertex poi){
+Ray reflect(Hit hit){
 	const float epsilon = 1e-12f;
+	const Ray rayIn = hit.ray;
+	const Vertex poi = hit.vertex;
+	
 	
 	Ray result;
 	
@@ -30,6 +33,24 @@ Ray reflect(Ray rayIn, Vertex poi){
 	result.position = poi.position + epsilon * poi.normal;
 	result.direction = rayIn.direction - 2.0f * poi.normal * dot(rayIn.direction, poi.normal);
 	result.inverseDirection = 1.0f / result.direction;
+	
+	return result;
+}
+
+/**
+ * TODO add support for refraction index
+ */
+Ray refract(Hit hit){
+	const float epsilon = 1e-12f;
+	const Ray rayIn = hit.ray;
+	const Vertex poi = hit.vertex;
+	
+	Ray result;
+	
+	//Move position along normal slightly to prevent collision with refractor
+	result.position = poi.position - epsilon * poi.normal;
+	result.direction = rayIn.direction;
+	result.inverseDirection = rayIn.inverseDirection;
 	
 	return result;
 }

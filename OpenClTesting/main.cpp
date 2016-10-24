@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 
+#include <iostream>
+
 #include "OpenClRayTracer.hpp"
 #include "OpenClContexts.hpp"
 #include "OpenGlShaders.hpp"
@@ -12,7 +14,7 @@
 int main()
 {
 	int width = 1024;
-	int height = 768;
+	int height = 200;
 
 
 	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
@@ -21,8 +23,12 @@ int main()
 	int maxObjectTypeVertexCount = 54;
 
 	OpenClRayTracer openClRayTracer(width, height, maxInstanceCount, maxTotalVertexCount);
+	openClRayTracer.initializeAdvancedRender();
+
 	GLFWwindow* window = openClRayTracer.getWindow();
 	//openClRayTracer.sizeofDebug();
+
+	std::cout << "Finished initializing(mostly)..." << std::endl;
 
 	InstanceBuilder cubeTypeBuilder;
 	InstanceBuilder invertedCubeTypeBuilder;
@@ -52,7 +58,7 @@ int main()
 	//auto cubeIndices = openClRayTracer.getTriangles(cubeTypeBuilder);// Doing stuff to this object type will alter every instance of this object type once the buffers are updated
 	//auto cubeVertices = openClRayTracer.getVertices(cubeTypeBuilder);
 
-
+	std::cout << "Finished initializing(completely)..." << std::endl;
 	float v = 0;//3.14159265f / 1.0f;
 	while (!glfwWindowShouldClose(window)) {
 		//Set up a matrix for the cameras position and orientation
@@ -66,16 +72,16 @@ int main()
 		openClRayTracer.clear();
 
 		//Add new stuff to draw for current frame
-		openClRayTracer.push_back(Instance(float16(1.0f), triLowerTypeBuilder));
-		openClRayTracer.push_back(Instance(float16(1.0f), triTypeBuilder));
-		openClRayTracer.push_back(Instance(glm::translate(float16(2.0f), float3(1.0f, -1.0f, -0.5f)), triTypeBuilder));
+		//openClRayTracer.push_back(Instance(float16(1.0f), triLowerTypeBuilder));
+		//openClRayTracer.push_back(Instance(float16(1.0f), triTypeBuilder));
+		//openClRayTracer.push_back(Instance(glm::translate(float16(2.0f), float3(1.0f, -1.0f, -0.5f)), triTypeBuilder));
 		openClRayTracer.push_back(Instance(float16(1.0f), invertedCubeTypeBuilder));
 		openClRayTracer.push_back(Instance(float16(1.0f), cubeTypeBuilder));
-		openClRayTracer.push_back(Instance(glm::translate(float16(1.2f), float3(0.0f, 2.0f, 1.5f)), cubeTypeBuilder));
-		openClRayTracer.push_back(Instance(
-			glm::translate(float16(0.70f), float3(0.0f, 2.0f * sin(50.0f * v), 3.0f)),
-			cubeTypeBuilder
-		));
+		//openClRayTracer.push_back(Instance(glm::translate(float16(1.2f), float3(0.0f, 2.0f, 1.5f)), cubeTypeBuilder));
+		//openClRayTracer.push_back(Instance(
+		//	glm::translate(float16(0.70f), float3(0.0f, 2.0f * sin(50.0f * v), 3.0f)),
+		//	cubeTypeBuilder
+		//));
 		openClRayTracer.push_back(Instance(
 			glm::rotate(glm::translate(float16(1.0f), float3(2.0f, 0.0f, 0.0f)), v * 3.5f, float3(0, 0, 1)),
 			cubeTypeBuilder
@@ -102,10 +108,13 @@ int main()
 		
 		//Start the actual Ray Tracing and draw result to the screen
 		//openClRayTracer.rayTrace(cameraMatrix);
-		openClRayTracer.iterativeRayTrace(cameraMatrix);
+		openClRayTracer.advancedRender(cameraMatrix);
+		//openClRayTracer.iterativeRayTrace(cameraMatrix);
 
 		//-----</>
 
+
+		printf("sizeof(Instance): %d\n", sizeof(Instance));
 		//Increment angle value
 		v += 1e-2f;
 	}

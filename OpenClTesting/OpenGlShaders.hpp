@@ -9,15 +9,17 @@
 class OpenGlShaders
 {
 public:
-	OpenGlShaders();
-	OpenGlShaders(int width, int height, std::string vertexShaderPath, std::string fragmentShaderPath);
+	//OpenGlShaders();
+	OpenGlShaders::OpenGlShaders(int width, int height, std::string vertexShaderPath, std::string fragmentShaderPath, GLFWframebuffersizefun customResizeCallback);
 	~OpenGlShaders();
+	void resizeCallback(GLFWwindow * window, int width, int height);
 	GLuint setupInteropScreen();
 	void draw();
 	GLFWwindow* getWindow() { return window; }
 
 private:
-	void setupWindow();
+	void setupWindow(GLFWframebuffersizefun customResizeCallback);
+	void resizeWindow(int width, int height);
 	GLuint setupShaders(std::string vertexShaderPath, std::string fragmentShaderPath);
 	GLuint compileShader(std::string shaderPath, GLuint shaderType);
 

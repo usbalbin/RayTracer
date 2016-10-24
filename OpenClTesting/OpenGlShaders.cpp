@@ -10,10 +10,10 @@
 #include <fstream>
 #include <vector>
 
-OpenGlShaders::OpenGlShaders(int width, int height, std::string vertexShaderPath, std::string fragmentShaderPath) {
+OpenGlShaders::OpenGlShaders(int width, int height, std::string vertexShaderPath, std::string fragmentShaderPath, GLFWframebuffersizefun customResizeCallback) {
 	this->width = width;
 	this->height = height;
-	setupWindow();
+	setupWindow(customResizeCallback);
 	this->programID = setupShaders(vertexShaderPath, fragmentShaderPath);
 }
 
@@ -64,26 +64,29 @@ GLuint OpenGlShaders::setupInteropScreen() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 
-
-	float testData[]{
-		1, 0, 0, 1,  0, 1, 0, 1,
-
-		1, 1, 0, 1,  0, 0, 1, 1
-	};
-
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 2, 2, 0, GL_RGBA, GL_FLOAT, testData);
-
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-
-	glFinish();
+	resizeWindow(width, height);
 
 	return textureBufferID;
 }
 
-void OpenGlShaders::setupWindow() {
+void OpenGlShaders::resizeWindow(int width, int height) {
+	this->width = width;
+	this->height = height;
+
+	glBindTexture(GL_TEXTURE_2D, textureBufferID);
+	
+
+	//glBindTexture(GL_TEXTURE_2D, textureBufferID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glFinish();
+}
+
+void OpenGlShaders::setupWindow(GLFWframebuffersizefun customResizeCallback) {
 	if (glfwInit() != GL_TRUE)
 		exit(1);
 
@@ -105,7 +108,13 @@ void OpenGlShaders::setupWindow() {
 	if(glewInit() != GLEW_OK)
 		exit(1);
 
+	glfwSetFramebufferSizeCallback(window, customResizeCallback);
 	glClearColor(1.0f, 0.0f, 0.75f, 1.0f);
+}
+
+void OpenGlShaders::resizeCallback(GLFWwindow* window, int width, int height) {
+	resizeWindow(width, height);
+	glViewport(0, 0, width, width);
 }
 
 GLuint OpenGlShaders::setupShaders(std::string vertexShaderPath, std::string fragmentShaderPath) {
@@ -167,6 +176,7 @@ void OpenGlShaders::draw() {
 	// Use our shader
 	glUseProgram(programID);
 
+	glBindTexture(GL_TEXTURE_2D, textureBufferID);
 	// 1rst attribute buffer : vertices
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
@@ -184,6 +194,7 @@ void OpenGlShaders::draw() {
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_BYTE, 0);
 
 	glDisableVertexAttribArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Swap buffers
 	glfwSwapBuffers(window);
