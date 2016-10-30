@@ -1,6 +1,9 @@
 // OpenClTesting.cpp : Defines the entry point for the console application.
 //
 
+
+//#define USE_CL_2_1
+
 #include "stdafx.h"
 
 #include <iostream>
@@ -14,7 +17,7 @@
 int main()
 {
 	int width = 1024;
-	int height = 200;
+	int height = 768;
 
 
 	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
@@ -23,8 +26,9 @@ int main()
 	int maxObjectTypeVertexCount = 54;
 
 	OpenClRayTracer openClRayTracer(width, height, maxInstanceCount, maxTotalVertexCount);
+#ifdef USE_CL_2_1
 	openClRayTracer.initializeAdvancedRender();
-
+#endif
 	GLFWwindow* window = openClRayTracer.getWindow();
 	//openClRayTracer.sizeofDebug();
 
@@ -34,12 +38,14 @@ int main()
 	InstanceBuilder invertedCubeTypeBuilder;
 	InstanceBuilder triLowerTypeBuilder;
 	InstanceBuilder triTypeBuilder;
+	InstanceBuilder sphereTypeBuilder;
 	{
 		std::vector<TriangleIndices> trianglesIndices = { TriangleIndices(0, 1, 2) };
 		std::vector<Vertex> triangleVertices = { Vertex(float3(-1.0f, -1.0f, -2.0f), float4(1.0f, 0.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, +1.0f, -2.1f), float4(0.0f, 1.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, -1.0f, -2.0f), float4(0.0f, 0.0f, 1.0f, 1.0f)) };
 		std::vector<Vertex> triangleVerticesLower = { Vertex(float3(-1.0f, +1.0f, -2.0f), float4(1.0f, 0.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, -1.0f, -2.1f), float4(0.0f, 1.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, +1.0f, -2.0f), float4(0.0f, 0.0f, 1.0f, 1.0f)) };
 
-		
+		const int qualityFactor = 20;
+		sphereTypeBuilder = openClRayTracer.push_backObjectType(genSphereIndices(qualityFactor), genSphereVertices(0.45f, float4(1.0f, 0.0f, 0.0f, 1.0f), qualityFactor));
 
 
 		triLowerTypeBuilder = openClRayTracer.push_backObjectType(trianglesIndices, triangleVerticesLower);
@@ -87,6 +93,11 @@ int main()
 			cubeTypeBuilder
 		));
 
+		for (int z = -2; z < 2; z++)
+			for (int y = -2; y < 2; y++)
+				for (int x = -2; x < 2; x++)
+					openClRayTracer.push_back(Instance(glm::translate(float16(1.0f), float3(-2.0f - x, y, z)), sphereTypeBuilder));
+		
 		//Resize buffers to fit the stuff to be drawn,
 		//only needs to be callen when more/larger stuff has been added since last resize
 		openClRayTracer.autoResize();//TODO: this is rather expensive, remove me if possible 
@@ -104,17 +115,21 @@ int main()
 		event = openClRayTracer.prepRayTraceNonBlocking();
 
 		//Whait for the preparations to finnish
-		event.wait();
+		//event.wait();
 		
 		//Start the actual Ray Tracing and draw result to the screen
-		//openClRayTracer.rayTrace(cameraMatrix);
+		
+#ifdef USE_CL_2_1
 		openClRayTracer.advancedRender(cameraMatrix);
+#else
+		openClRayTracer.rayTrace(cameraMatrix);
+#endif
 		//openClRayTracer.iterativeRayTrace(cameraMatrix);
 
 		//-----</>
 
 
-		printf("sizeof(Instance): %d\n", sizeof(Instance));
+		//printf("sizeof(Instance): %d\n", sizeof(Instance));
 		//Increment angle value
 		v += 1e-2f;
 	}

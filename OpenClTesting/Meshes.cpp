@@ -3,6 +3,11 @@
 #include "stdafx.h"
 #include "Meshes.hpp"
 
+#include "glm/gtx/rotate_vector.hpp"
+
+#define PI 3.141592653589793
+//#define EPSILON 1.0e-6
+
 std::vector<Vertex> genCubeVertices(float size) {
 	std::vector<Vertex> cubeVertices{
 		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, -1.0f)), Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, 0.0f,  -1.0f)), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, -1.0f)), Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, -1.0f)), //front
@@ -84,3 +89,40 @@ TriangleIndices(4, 0, 3), TriangleIndices(3, 7, 4),
 TriangleIndices(0, 1, 5), TriangleIndices(5, 4, 0),
 TriangleIndices(1, 5, 6), TriangleIndices(6, 2, 1)
 };*/
+
+
+std::vector<Vertex> genSphereVertices(float radius, float4 color, int qualityFactor) {
+	std::vector<Vertex> vertices;
+	const float twoPi = 2.0f * (float)PI;
+	const float halfPi = PI / 2.0f;
+
+	float step = PI / qualityFactor;
+	for (float pitch = 0; pitch < twoPi; pitch += step) {
+		for (float yaw = -halfPi; yaw <= halfPi + 1.0e-6; yaw += step) {
+
+			float3 position = glm::rotateY(glm::rotateX(float3(0, radius, 0), pitch), yaw);
+			vertices.push_back(Vertex(position, color, position));
+		}
+
+	}
+	return vertices;
+}
+
+std::vector<TriangleIndices> genSphereIndices(int qualityFactor) {
+	int vertexCount = (qualityFactor + 1) * 2 * qualityFactor;
+	std::vector<TriangleIndices> indices;
+	for (int i = 0; i < vertexCount; i++) {
+		indices.push_back(TriangleIndices(
+			i,
+			(i - 1 - qualityFactor + vertexCount) % vertexCount,
+			(i - 1 + vertexCount) % vertexCount
+		));
+
+		indices.push_back(TriangleIndices(
+			i,
+			(i - qualityFactor + vertexCount) % vertexCount,
+			(i - 1 - qualityFactor + vertexCount) % vertexCount
+		));
+	}
+	return indices;
+}

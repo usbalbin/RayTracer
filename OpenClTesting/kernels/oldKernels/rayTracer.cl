@@ -9,11 +9,11 @@
 
 float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, float16 matrix) {
 	Ray ray = genPerspectiveRayOld(matrix);
-	return traceBruteForceColor(objectCount, objects, triangles, vertices, ray);
+	return traceBruteForceColorOld(objectCount, objects, triangles, vertices, ray);
 }
 
 
-Ray genOrthogonalRay() {
+Ray genOrthogonalRayOld() {
 	Ray ray;
 	float x = 2 * (float)xIndex / width - 1.0f;
 	float y = 2 * (float)yIndex / height - 1.0f;
@@ -62,7 +62,7 @@ Ray genPerspectiveRayOld(float16 matrix) {
 }
 
 
-float4 traceBruteForceColor(int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Ray ray) {
+float4 traceBruteForceColorOld(int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Ray ray) {
 	float4 result = (float4)(0, 0, 0, 1);
 	
 	float closestTriangleDist = FLT_MAX;
@@ -72,8 +72,8 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	for (int objectIndex = 0; objectIndex < objectCount; objectIndex++) {
 		
 		Object object = allObjects[objectIndex];
-		global const TriangleIndices* triangles = getTrianglesIndices(allTriangles, object);
-		global const Vertex* vertices = getVertices(allVertices, object);
+		global const TriangleIndices* triangles = getTrianglesIndicesOld(allTriangles, object);
+		global const Vertex* vertices = getVerticesOld(allVertices, object);
 		
 		float nearDistacnce, farDistance;
 		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance) || nearDistacnce >= closestTriangleDist)
@@ -82,7 +82,7 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 		result.x = 1;
 		//return (float4)(1.0f, 0.0f, 0.0f, 1.0f);
 		for (int triangleIndex = 0; triangleIndex < object.numTriangles; triangleIndex++) {
-			Triangle triangle = getTriangle(triangles, vertices, object, triangleIndex);
+			Triangle triangle = getTriangleOld(triangles, vertices, object, triangleIndex);
 
 			float distance;
 			float2 uv;
@@ -98,7 +98,7 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	if(closestTriangleDist == FLT_MAX)
 		return result;
 
-	Vertex interpolated = interpolateTriangle(closestTriangle, closestUv);
+	Vertex interpolated = interpolateTriangleOld(closestTriangle, closestUv);
 	
 	result = interpolated.color;
 	
@@ -108,15 +108,15 @@ float4 traceBruteForceColor(int objectCount, global const Object* allObjects, gl
 	return result;//(float4)((float)(int)closestTriangleDist);
 }
 
-Vertex interpolateTriangle(Triangle triangle, float2 uv){
+Vertex interpolateTriangleOld(Triangle triangle, float2 uv){
 	Vertex result;
-	result.position = interpolate3(triangle.a.position, triangle.b.position, triangle.c.position, uv);
-	result.normal = interpolate3(triangle.a.normal, triangle.b.normal, triangle.c.normal, uv);
-	result.color = interpolate4(triangle.a.color, triangle.b.color, triangle.c.color, uv);
+	result.position = interpolate3Old(triangle.a.position, triangle.b.position, triangle.c.position, uv);
+	result.normal = interpolate3Old(triangle.a.normal, triangle.b.normal, triangle.c.normal, uv);
+	result.color = interpolate4Old(triangle.a.color, triangle.b.color, triangle.c.color, uv);
 	return result;
 }
 
-float4 interpolate4(float4 a, float4 b, float4 c, float2 uv){
+float4 interpolate4Old(float4 a, float4 b, float4 c, float2 uv){
 	float bFactor = uv.x;
 	float cFactor = uv.y;
 	float aFactor = 1 - uv.x - uv.y;
@@ -124,7 +124,7 @@ float4 interpolate4(float4 a, float4 b, float4 c, float2 uv){
 	return a * aFactor + b * bFactor + c * cFactor;
 }
 
-float3 interpolate3(float3 a, float3 b, float3 c, float2 uv){
+float3 interpolate3Old(float3 a, float3 b, float3 c, float2 uv){
 	float bFactor = uv.x;
 	float cFactor = uv.y;
 	float aFactor = 1 - uv.x - uv.y;
@@ -132,16 +132,16 @@ float3 interpolate3(float3 a, float3 b, float3 c, float2 uv){
 	return a * aFactor + b * bFactor + c * cFactor;
 }
 
-global const Vertex* getVertices(global const Vertex* allVertices, Object object) {
+global const Vertex* getVerticesOld(global const Vertex* allVertices, Object object) {
 	return &allVertices[object.startVertex];
 }
 
-global const TriangleIndices* getTrianglesIndices(global const TriangleIndices* allTriangles, Object object) {
+global const TriangleIndices* getTrianglesIndicesOld(global const TriangleIndices* allTriangles, Object object) {
 	return &allTriangles[object.startTriangle];
 }
 
 
-Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleIndices) {
+Triangle getTriangle2Old(global const Vertex* vertices, TriangleIndices triangleIndices) {
 	Triangle triangle;
 	triangle.a = vertices[triangleIndices.a];
 	triangle.b = vertices[triangleIndices.b];
@@ -149,7 +149,7 @@ Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleInd
 	return triangle;
 }
 
-Triangle getTriangle(global const TriangleIndices* trianglesIndices, global const Vertex* vertices, Object object, int index) {
+Triangle getTriangleOld(global const TriangleIndices* trianglesIndices, global const Vertex* vertices, Object object, int index) {
 	TriangleIndices triangleIndices = trianglesIndices[index];
-	return getTriangle2(vertices, triangleIndices);
+	return getTriangle2Old(vertices, triangleIndices);
 }

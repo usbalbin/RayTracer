@@ -29,19 +29,19 @@ public:
 
 	void writeToInstanceBuffer();
 
-	cl::Event vertexShaderNonBlocking();
+	
 
 	void autoResize();
 	void autoResizeObjectTypes();
 	void reserve(int maxInstanceCount, int maxTotalVertexCount);
 
 	void computeOnCPU();
+	cl::Event vertexShaderNonBlocking();
 	cl::Event aabbNonBlocking();
 	cl::Event prepRayTraceNonBlocking();
 	cl::Event rayTraceNonBlocking(float16 matrix);
 	void sizeofDebug();
 	void rayTrace(float16 matrix);
-	void iterativeRayTrace(float16 matrix);
 	void fetchRayTracerResult();
 
 	void initializeAdvancedRender();

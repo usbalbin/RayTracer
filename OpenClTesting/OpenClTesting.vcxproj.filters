@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Resource Files\oldStuff">
-      <UniqueIdentifier>{9e9ce8b7-c40d-4711-afa0-3e9689da5dd6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -51,6 +48,15 @@
     <ClInclude Include="Meshes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="kernels\containers.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kernels\intersection.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kernels\math.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -80,5 +86,13 @@
     <ClCompile Include="Meshes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernels\aabb.cl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="kernels\vertexShader.cl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

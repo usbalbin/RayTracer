@@ -53,30 +53,30 @@ void OpenClRayTracer::initialize() {
 
 	std::string vertexShaderSource = readFileToString("kernels/vertexShader.cl");
 	std::string aabbSource = readFileToString("kernels/aabb.cl");
-	//std::string rayTracerSource = readFileToString("kernels/oldKernels/rayTracerMain.cl");
+	std::string rayTracerSource = readFileToString("kernels/oldKernels/rayTracerMain.cl");
 	//std::string iterativeRayTracerSource = readFileToString("kernels/iterativeDepth.cl");
 	//std::string sizeofSource = readFileToString("kernels/sizeof.cl");
-
+#ifdef USE_CL_2_1
 	std::string perspectiveRayGeneratorSource = readFileToString("kernels/newKernels/1_perspectiveRayGenerator.cl");
 	std::string rayTraceAdvancedSource = readFileToString("kernels/newKernels/2A_rayTracer.cl");
 	std::string rayGeneratorSource = readFileToString("kernels/newKernels/2B_rayGenerator.cl");
 	std::string treeTraverserSource = readFileToString("kernels/newKernels/3_treeTraverser.cl");
 	std::string colorToPixelSource = readFileToString("kernels/newKernels/4_colorToPixel.cl");
-
+#endif
 
 
 
 	sources.push_back({ vertexShaderSource.c_str(), vertexShaderSource.length() });
 	sources.push_back({ aabbSource.c_str(), aabbSource.length() });
-	//sources.push_back({ rayTracerSource.c_str(), rayTracerSource.length() });
-	//sources.push_back({ iterativeRayTracerSource.c_str(), iterativeRayTracerSource.length() });
+	sources.push_back({ rayTracerSource.c_str(), rayTracerSource.length() });
 	//sources.push_back({ sizeofSource.c_str(), sizeofSource.length() });
-
+#ifdef USE_CL_2_1
 	sources.push_back({ perspectiveRayGeneratorSource.c_str(), perspectiveRayGeneratorSource.length() });
 	sources.push_back({ rayTraceAdvancedSource.c_str(), rayTraceAdvancedSource.length() });
 	sources.push_back({ rayGeneratorSource.c_str(), rayGeneratorSource.length() });
 	sources.push_back({ treeTraverserSource.c_str(), treeTraverserSource.length() });
 	sources.push_back({ colorToPixelSource.c_str(), colorToPixelSource.length() });
+#endif
 
 
 	cl::Program program(context, sources);
@@ -89,9 +89,11 @@ void OpenClRayTracer::initialize() {
 	getcwd(programPathBuffer, 256);
 	std::string programPath = programPathBuffer;
 	std::string stuff = device.getInfo<CL_DEVICE_OPENCL_C_VERSION>();
+	std::string supported_extensions = device.getInfo<CL_DEVICE_EXTENSIONS>();
+	std::cout << supported_extensions << std::endl;
+
 
 	std::cout << "Path: \"" << programPath << "\"" << std::endl;
-
 
 
 
@@ -121,9 +123,11 @@ void OpenClRayTracer::initialize() {
 
 
 
-
-
-	std::string extraOptions = "-cl-std=CL2.0";// "-cl-std=c++";// "-cl-std=CL2.0";// "-cl-unsafe-math-optimizations -cl-fast-relaxed-math";
+#ifdef USE_CL_2_1
+	std::string extraOptions = "-cl-std=CL2.1";
+#else
+	std::string extraOptions = "";// "-cl-std=CL2.0";// "-cl-std=c++";// "-cl-std=CL2.0";// "-cl-unsafe-math-optimizations -cl-fast-relaxed-math";
+#endif
 	std::string compilerFlags = "-I " + programPath + " " + extraOptions;
 	std::cout << compilerFlags << std::endl;
 	try {
@@ -147,16 +151,17 @@ void OpenClRayTracer::initialize() {
 
 	vertexShaderKernel = cl::Kernel(program, "vertexShader", &status);
 	aabbKernel = cl::Kernel(program, "aabb", &status);
-	//rayTraceKernel = cl::Kernel(program, "rayTracer", &status);
-	//iterativeRayTracerKernel = cl::Kernel(program, "iterative", &status);
+	rayTraceKernel = cl::Kernel(program, "rayTracer", &status);
 	//sizeofKernel = cl::Kernel(program, "debug", &status);
 
+
+#ifdef USE_CL_2_1
 	perspectiveRayGeneratorKernel = cl::Kernel(program, "perspectiveRayGenerator", &status);
 	rayTraceAdvancedKernel = cl::Kernel(program, "rayTraceAdvanced", &status);
 	rayGeneratorKernel = cl::Kernel(program, "rayGenerator", &status);
 	treeTraverserKernel = cl::Kernel(program, "treeTraverser", &status);
 	colorToPixelKernel = cl::Kernel(program, "colorToPixel", &status);
-
+#endif
 	if (status != CL_SUCCESS) {
 		std::cout << "Failed to create kernels" << std::endl;
 		exit(1);
@@ -270,7 +275,8 @@ void OpenClRayTracer::writeToInstanceBuffer() {
 }
 
 void OpenClRayTracer::rayTrace(float16 matrix) {
-	rayTraceNonBlocking(matrix).wait();
+	rayTraceNonBlocking(matrix);// .wait();
+	queue.finish();
 	fetchRayTracerResult();
 }
 
@@ -316,15 +322,6 @@ cl::Event OpenClRayTracer::vertexShaderNonBlocking() {
 	queue.enqueueNDRangeKernel(vertexShaderKernel, cl::NullRange, cl::NDRange(objectInstances.size()), cl::NullRange, 0, &event);
 
 	
-	//debug
-	event.wait();
-
-	std::vector<Object> objs(objectInstances.size());
-	queue.enqueueReadBuffer(transformedObjectBuffer, CL_TRUE, 0, sizeof(Object) * objs.size(), objs.data());
-	
-	std::vector<Instance> insts(objectInstances.size());
-	queue.enqueueReadBuffer(objectInstanceBuffer, CL_TRUE, 0, sizeof(Instance) * insts.size(), insts.data());
-	
 	queue.finish();
 	
 	return event;
@@ -358,14 +355,14 @@ cl::Event OpenClRayTracer::aabbNonBlocking() {
 	queue.finish();
 	*/
 	
-
+	queue.finish();
 	return event;
 
 }
 
 //Give me a better name
 cl::Event OpenClRayTracer::prepRayTraceNonBlocking() {
-	vertexShaderNonBlocking().wait();		//WARNING CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE can not be set for cammand queue for this to work!!!
+	vertexShaderNonBlocking();// .wait();		//WARNING CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE can not be set for cammand queue for this to work!!!
 	return aabbNonBlocking();
 }
 
@@ -484,6 +481,7 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	perspectiveRayGeneratorKernel.setArg(0, matrix);
 	perspectiveRayGeneratorKernel.setArg(1, rayBuffers[0]);
 	queue.enqueueNDRangeKernel(perspectiveRayGeneratorKernel, cl::NullRange, cl::NDRange(width, height));
+	queue.finish();
 
 	cl::Buffer rayCountBuffer(context, CL_MEM_READ_WRITE, sizeof(rayCount));
 	rayGeneratorKernel.setArg(1, rayCountBuffer);
@@ -504,14 +502,17 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	for (i = 0; i < max; i++) {
 		rayTraceAdvancedKernel.setArg(4, rayBuffers[i]);
 		rayTraceAdvancedKernel.setArg(5, hitBuffers[i]);
-		queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NullRange, cl::NDRange(rayCount));
+		queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NDRange(64), cl::NDRange(rayCount));
+		queue.finish();
+
 		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(rayCount), &rayCount);	//Remove this line
 
 
 		rayGeneratorKernel.setArg(0, hitBuffers[i]);
 		rayGeneratorKernel.setArg(2, rayBuffers[i]);
 		rayGeneratorKernel.setArg(3, rayTreeBuffers[i]);
-		queue.enqueueNDRangeKernel(rayGeneratorKernel, cl::NullRange, cl::NDRange(rayCount));
+		queue.enqueueNDRangeKernel(rayGeneratorKernel, cl::NDRange(64), cl::NDRange(rayCount));
+		queue.finish();
 		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(rayCount), &rayCount);
 		rayCounts.push(rayCount);
 	}

@@ -1,6 +1,8 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
 
+#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 #include "kernels/containers.h"
 #include "kernels/intersection.h"
 
@@ -9,6 +11,7 @@
 float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, float16 matrix);
 bool traceBruteForceColor(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, Ray ray, Vertex* intersectionPoint);
 void summarizeHits(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult, local atomic_int* groupResultCount);
+void summarizeHitsNew(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult);
 
 Vertex interpolateTriangle(Triangle triangle, float2 uv);
 float4 interpolate4(float4 a, float4 b, float4 c, float2 uv);
@@ -50,18 +53,20 @@ void kernel rayTraceAdvanced(
 	hit.vertex = intersectionPoint;
 	hit.ray = ray;
 	
-	
 	if(get_global_id(0)==0){																			// First worker will initialize groupResultCount to 0
-        atomic_init(hitCount, 0);
+        printf("Before init hitCount: %d", atomic_load(hitCount));
+		atomic_init(hitCount, 42);
+		printf("After init hitCount: %d", atomic_load(hitCount));
     }
 	
-	local atomic_int groupResultCount;
+	/*local atomic_int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         atomic_init(&groupResultCount, 0);
     }
     barrier(CLK_GLOBAL_MEM_FENCE);
 	summarizeHits(hits, hitCount, hit, wasHit, &groupResultCount);
-	
+	*/
+	//summarizeHitsNew(hits, hitCount, hit, wasHit);
 	
 }
 
@@ -143,6 +148,36 @@ void summarizeHits(global Hit* results, global atomic_int* globalResultCount, Hi
 		results[groupIndex + privateIndex] = result;
 	}*/
 }
+
+
+void summarizeHitsNew(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult){
+	int groupIndex;
+	int privateIndex;
+	
+	bool someInGroupHasResult = work_group_any(hasResult);
+	
+	if(someInGroupHasResult){
+		bool allInGroupHasResult = work_group_all(hasResult);
+		privateIndex = allInGroupHasResult ?
+			get_local_id(0) :
+			work_group_scan_exclusive_add(hasResult ? 1 : 0);
+	}
+	
+	barrier(CLK_GLOBAL_MEM_FENCE);
+	
+	if(someInGroupHasResult){
+		if(get_local_id(0) == get_local_size(0) - 1){
+			int groupResultCount = privateIndex + (hasResult ? 1 : 0);
+			groupIndex = atomic_fetch_add(globalResultCount, groupResultCount);
+		}
+	}
+	
+	if(hasResult){
+		int index = groupIndex + privateIndex;
+		results[index] = result;
+	}
+}
+
 
 Vertex interpolateTriangle(Triangle triangle, float2 uv){
 	Vertex result;
