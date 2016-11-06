@@ -1,27 +1,24 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
 
-#pragma OPENCL EXTENSION cl_amd_printf : enable
-
 #include "kernels/containers.h"
 #include "kernels/intersection.h"
 
 
 
-float4 traceRay(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, float16 matrix);
-bool traceBruteForceColor(int objectCount, global const Object* objects, global const TriangleIndices* triangles, global const Vertex* vertices, Ray ray, Vertex* intersectionPoint);
-void summarizeHits(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult, local atomic_int* groupResultCount);
-void summarizeHitsNew(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult);
+bool traceBruteForceColor(int objectCount, const Object* objects, const TriangleIndices* triangles, const Vertex* vertices, Ray ray, Vertex* intersectionPoint);
+void summarizeHits(Hit* results, atomic_int* globalResultCount, Hit result, bool hasResult);//, local atomic_int* groupResultCount);
+void summarizeHitsNew(Hit* results, atomic_int* globalResultCount, Hit result, bool hasResult);
 
 Vertex interpolateTriangle(Triangle triangle, float2 uv);
 float4 interpolate4(float4 a, float4 b, float4 c, float2 uv);
 float3 interpolate3(float3 a, float3 b, float3 c, float2 uv);
 
 
-global const Vertex* getVertices(global const Vertex* allVertices, Object object);
-global const TriangleIndices* getTrianglesIndices(global const TriangleIndices* allTriangles, Object object);
-Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleIndices);
-Triangle getTriangle(global const TriangleIndices* trianglesIndices, global const Vertex* vertices, Object object, int index);
+const Vertex* getVertices(const Vertex* allVertices, Object object);
+const TriangleIndices* getTrianglesIndices(const TriangleIndices* allTriangles, Object object);
+Triangle getTriangle2(const Vertex* vertices, TriangleIndices triangleIndices);
+Triangle getTriangle(const TriangleIndices* trianglesIndices, const Vertex* vertices, Object object, int index);
 
 
 
@@ -49,14 +46,15 @@ void kernel rayTraceAdvanced(
 	Vertex intersectionPoint;
 	Ray ray = rays[gid];
 	Hit hit;
+	
 	bool wasHit = traceBruteForceColor(objectCount, objects, triangles, vertices, ray, &intersectionPoint);
 	hit.vertex = intersectionPoint;
 	hit.ray = ray;
 	
 	if(get_global_id(0)==0){																			// First worker will initialize groupResultCount to 0
-        printf("Before init hitCount: %d", atomic_load(hitCount));
-		atomic_init(hitCount, 42);
-		printf("After init hitCount: %d", atomic_load(hitCount));
+        //printf("Before init hitCount:");// %d", atomic_load(hitCount));
+		atomic_init(hitCount, 0);
+		//printf("After init hitCount:");// %d", atomic_load(hitCount));
     }
 	
 	/*local atomic_int groupResultCount;
@@ -66,14 +64,14 @@ void kernel rayTraceAdvanced(
     barrier(CLK_GLOBAL_MEM_FENCE);
 	summarizeHits(hits, hitCount, hit, wasHit, &groupResultCount);
 	*/
-	//summarizeHitsNew(hits, hitCount, hit, wasHit);
+	summarizeHits(hits, hitCount, hit, wasHit);
 	
 }
 
 
 
 
-bool traceBruteForceColor(int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Ray ray, Vertex* intersectionPoint) {
+bool traceBruteForceColor(int objectCount, const Object* allObjects, const TriangleIndices* allTriangles, const Vertex* allVertices, Ray ray, Vertex* intersectionPoint) {
 	float closestTriangleDist = FLT_MAX;
 	Triangle closestTriangle;
 	float2 closestUv;
@@ -81,13 +79,13 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 	for (int objectIndex = 0; objectIndex < objectCount; objectIndex++) {
 		
 		Object object = allObjects[objectIndex];
-		global const TriangleIndices* triangles = getTrianglesIndices(allTriangles, object);
-		global const Vertex* vertices = getVertices(allVertices, object);
 		
 		float nearDistacnce, farDistance;
 		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance))
 			continue;
 		
+		const TriangleIndices* triangles = getTrianglesIndices(allTriangles, object);
+		const Vertex* vertices = getVertices(allVertices, object);
 		
 		for (int triangleIndex = 0; triangleIndex < object.numTriangles; triangleIndex++) {
 			Triangle triangle = getTriangle(triangles, vertices, object, triangleIndex);
@@ -102,8 +100,8 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 		}
 	}
 	
-	if(closestTriangleDist == FLT_MAX)
-		return false;
+	//if(closestTriangleDist == FLT_MAX)
+	//	return false;
 
 	*intersectionPoint = interpolateTriangle(closestTriangle, closestUv);
 	
@@ -111,7 +109,7 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 }
 
 
-void summarizeHits(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult, local atomic_int* groupResultCount){
+void summarizeHits(Hit* results, atomic_int* globalResultCount, Hit result, bool hasResult){//, local atomic_int* groupResultCount){
 	
 	int groupIndex;
 	int privateIndex;
@@ -137,7 +135,7 @@ void summarizeHits(global Hit* results, global atomic_int* globalResultCount, Hi
     if(hasResult){
 		int index = atomic_fetch_add(globalResultCount, 1);
 		results[index] = result;
-		printf("Current index: %d\n", index);
+		//printf("Current index: %d\n", index);
 	}
 	
 	barrier(CLK_GLOBAL_MEM_FENCE);
@@ -150,7 +148,7 @@ void summarizeHits(global Hit* results, global atomic_int* globalResultCount, Hi
 }
 
 
-void summarizeHitsNew(global Hit* results, global atomic_int* globalResultCount, Hit result, bool hasResult){
+void summarizeHitsNew(Hit* results, atomic_int* globalResultCount, Hit result, bool hasResult){
 	int groupIndex;
 	int privateIndex;
 	
@@ -203,15 +201,15 @@ float3 interpolate3(float3 a, float3 b, float3 c, float2 uv){
 	return a * aFactor + b * bFactor + c * cFactor;
 }
 
-global const Vertex* getVertices(global const Vertex* allVertices, Object object) {
+const Vertex* getVertices(const Vertex* allVertices, Object object) {
 	return &allVertices[object.startVertex];
 }
 
-global const TriangleIndices* getTrianglesIndices(global const TriangleIndices* allTriangles, Object object) {
+const TriangleIndices* getTrianglesIndices(const TriangleIndices* allTriangles, Object object) {
 	return &allTriangles[object.startTriangle];
 }
 
-Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleIndices) {
+Triangle getTriangle2(const Vertex* vertices, TriangleIndices triangleIndices) {
 	Triangle triangle;
 	triangle.a = vertices[triangleIndices.a];
 	triangle.b = vertices[triangleIndices.b];
@@ -219,7 +217,7 @@ Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleInd
 	return triangle;
 }
 
-Triangle getTriangle(global const TriangleIndices* trianglesIndices, global const Vertex* vertices, Object object, int index) {
+Triangle getTriangle(const TriangleIndices* trianglesIndices, const Vertex* vertices, Object object, int index) {
 	TriangleIndices triangleIndices = trianglesIndices[index];
 	return getTriangle2(vertices, triangleIndices);
 }

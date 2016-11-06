@@ -27,7 +27,7 @@ OpenGlShaders::~OpenGlShaders() {
 	glfwTerminate();
 }
 
-GLuint OpenGlShaders::setupInteropScreen() {
+GLuint OpenGlShaders::setupScreen() {
 	
 	glGenVertexArrays(1, &vertexArrayID);
 	glBindVertexArray(vertexArrayID);
@@ -83,6 +83,11 @@ void OpenGlShaders::resizeWindow(int width, int height) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	glFinish();
+}
+
+void OpenGlShaders::writeToScreen(std::vector<float4> colors) {
+	glTexSubImage2D(textureBufferID, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, colors.data());
 	glFinish();
 }
 

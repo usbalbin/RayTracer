@@ -2,7 +2,7 @@
 //
 
 
-//#define USE_CL_2_1
+
 
 #include "stdafx.h"
 
@@ -14,10 +14,11 @@
 #include "Meshes.hpp"
 #include "glm\gtc\matrix_transform.hpp"
 
+
 int main()
 {
-	int width = 1024;
-	int height = 768;
+	int width = 16;
+	int height = 16;
 
 
 	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
@@ -26,6 +27,12 @@ int main()
 	int maxObjectTypeVertexCount = 54;
 
 	OpenClRayTracer openClRayTracer(width, height, maxInstanceCount, maxTotalVertexCount);
+
+
+	openClRayTracer.debugCl();
+
+
+
 #ifdef USE_CL_2_1
 	openClRayTracer.initializeAdvancedRender();
 #endif
@@ -93,11 +100,12 @@ int main()
 			cubeTypeBuilder
 		));
 
+		/*
 		for (int z = -2; z < 2; z++)
 			for (int y = -2; y < 2; y++)
 				for (int x = -2; x < 2; x++)
 					openClRayTracer.push_back(Instance(glm::translate(float16(1.0f), float3(-2.0f - x, y, z)), sphereTypeBuilder));
-		
+		*/
 		//Resize buffers to fit the stuff to be drawn,
 		//only needs to be callen when more/larger stuff has been added since last resize
 		openClRayTracer.autoResize();//TODO: this is rather expensive, remove me if possible 

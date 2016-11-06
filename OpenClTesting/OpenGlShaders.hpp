@@ -5,6 +5,8 @@
 #include "GLFW\glfw3.h"
 
 #include <string>
+#include <vector>
+#include "Containers.hpp"
 
 class OpenGlShaders
 {
@@ -13,13 +15,14 @@ public:
 	OpenGlShaders::OpenGlShaders(int width, int height, std::string vertexShaderPath, std::string fragmentShaderPath, GLFWframebuffersizefun customResizeCallback);
 	~OpenGlShaders();
 	void resizeCallback(GLFWwindow * window, int width, int height);
-	GLuint setupInteropScreen();
+	GLuint setupScreen();
 	void draw();
 	GLFWwindow* getWindow() { return window; }
 
 private:
 	void setupWindow(GLFWframebuffersizefun customResizeCallback);
 	void resizeWindow(int width, int height);
+	void writeToScreen(std::vector<float4> colors);
 	GLuint setupShaders(std::string vertexShaderPath, std::string fragmentShaderPath);
 	GLuint compileShader(std::string shaderPath, GLuint shaderType);
 

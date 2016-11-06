@@ -100,8 +100,8 @@ void OpenClContexts::initializeInteropGpu() {
 //TODO initializeCpu()
 
 void OpenClContexts::initialize(int deviceType){
-	if(gpuContexts.size() > 0)
-		return;
+	//if(gpuContexts.size() > 0)
+	//	return;
 	
 	std::vector<cl::Platform> platforms;
 	cl::Platform::get(&platforms);

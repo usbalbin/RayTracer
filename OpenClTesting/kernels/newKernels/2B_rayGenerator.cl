@@ -5,7 +5,7 @@ void summarizeRays(global Ray* results, global atomic_int* globalResultCount, Ra
 
 void kernel rayGenerator(
 	global const Hit* hits,
-	global const atomic_int* rayIndex,
+	global atomic_int* rayIndex,
 	global Ray* raysOut,
 	global RayTree* rayTrees
 ){
@@ -27,20 +27,27 @@ void kernel rayGenerator(
 	Ray refraction = refract(hit);
 	
 	
+	if(get_global_id(0)==0){																			// initialize rayIndex to 0
+        atomic_init(rayIndex, 0);
+    }
 	
 	local atomic_int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
-        groupResultCount = 0;
+        atomic_init(&groupResultCount, 0);
     }
     barrier(CLK_GLOBAL_MEM_FENCE);
 	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex, &groupResultCount);
 	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex, &groupResultCount);
 	
 	
-	rayTree.reflectIndex = reflectionIndex;
-	rayTree.refractIndex = refractionIndex;
 	
-	rayTrees[gid] = rayTree;
+	int g_i_d = get_global_id(0);
+	rayTree.reflectIndex = g_i_d;//reflectionIndex;
+	rayTree.refractIndex = g_i_d;//refractionIndex;
+	
+	//if(g_i_d < 32)
+	//	printf("gid: %d\n", g_i_d);
+	rayTrees[g_i_d] = rayTree;
 }
 
 

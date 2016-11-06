@@ -9,6 +9,9 @@
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
 
+#define USE_CL_2_1
+//#define RUN_ON_CPU
+
 class OpenClRayTracer
 {
 public:
@@ -40,7 +43,7 @@ public:
 	cl::Event aabbNonBlocking();
 	cl::Event prepRayTraceNonBlocking();
 	cl::Event rayTraceNonBlocking(float16 matrix);
-	void sizeofDebug();
+	void debugCl();
 	void rayTrace(float16 matrix);
 	void fetchRayTracerResult();
 
@@ -68,7 +71,7 @@ private:
 	cl::Kernel aabbKernel;
 	cl::Kernel rayTraceKernel;
 	cl::Kernel iterativeRayTracerKernel;
-	cl::Kernel sizeofKernel;
+	cl::Kernel debugKernel;
 
 	cl::Kernel perspectiveRayGeneratorKernel;
 	cl::Kernel rayTraceAdvancedKernel;
@@ -93,8 +96,11 @@ private:
 	std::vector<cl::Buffer> hitBuffers;
 
 
+#ifndef RUN_ON_CPU
 	std::vector<cl::Memory> resultImages;// Has to be vector even though there is only one element due to queue.enqueueAcquireGLObjects
-	
+#else
+	std::vector<cl::Buffer> resultImages;
+#endif
 	OpenGlShaders renderer;
 	GLuint openGlTextureID;
 
