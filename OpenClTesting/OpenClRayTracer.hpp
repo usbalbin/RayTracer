@@ -9,7 +9,7 @@
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
 
-#define USE_CL_2_1
+#define ADVANCED_RENDERER
 //#define RUN_ON_CPU
 
 class OpenClRayTracer

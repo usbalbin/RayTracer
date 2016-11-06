@@ -63,7 +63,7 @@ void OpenClRayTracer::initialize() {
 	std::string rayTracerSource = readFileToString("kernels/oldKernels/rayTracer.cl");
 	std::string rayTracerKernelSource = readFileToString("kernels/oldKernels/rayTracerMain.cl");
 	std::string debugSource = readFileToString("kernels/debug.cl");
-#ifdef USE_CL_2_1
+#ifdef ADVANCED_RENDERER
 	std::string perspectiveRayGeneratorSource = readFileToString("kernels/newKernels/1_perspectiveRayGenerator.cl");
 	std::string rayTraceAdvancedSource = readFileToString("kernels/newKernels/2A_rayTracer.cl");
 	std::string rayGeneratorSource = readFileToString("kernels/newKernels/2B_rayGenerator.cl");
@@ -78,7 +78,7 @@ void OpenClRayTracer::initialize() {
 	//sources.push_back({ rayTracerSource.c_str(), rayTracerSource.length() });
 	sources.push_back({ rayTracerKernelSource.c_str(), rayTracerKernelSource.length() });
 	sources.push_back({ debugSource.c_str(), debugSource.length() });
-#ifdef USE_CL_2_1
+#ifdef ADVANCED_RENDERER
 	sources.push_back({ perspectiveRayGeneratorSource.c_str(), perspectiveRayGeneratorSource.length() });
 	sources.push_back({ rayTraceAdvancedSource.c_str(), rayTraceAdvancedSource.length() });
 	sources.push_back({ rayGeneratorSource.c_str(), rayGeneratorSource.length() });
@@ -131,12 +131,12 @@ void OpenClRayTracer::initialize() {
 
 
 
-#ifdef USE_CL_2_1
-	std::string extraOptions = "-cl-std=CL2.0 "/*-s \"" + programPath + "kernels/newKernels/3_treeTraverser.cl\" "*/;
+#ifdef ADVANCED_RENDERER
+	std::string extraOptions = "-cl-std=CL1.2 "/*-s \"" + programPath + "kernels/newKernels/3_treeTraverser.cl\" "*/;
 #else
 	std::string extraOptions = "";// "-cl-std=CL2.0";// "-cl-std=c++";// "-cl-std=CL2.0";// "-cl-unsafe-math-optimizations -cl-fast-relaxed-math";
 #endif
-	std::string compilerFlags = /*-O0 -g*/" -O0 -g -I " + programPath + " " + extraOptions;
+	std::string compilerFlags = /*-O0 -g*/" -I " + programPath + " " + extraOptions;
 	std::cout << compilerFlags << std::endl;
 	try {
 		std::cout << "Build started..." << std::endl;
@@ -163,7 +163,7 @@ void OpenClRayTracer::initialize() {
 	debugKernel = cl::Kernel(program, "debug", &status);
 
 
-#ifdef USE_CL_2_1
+#ifdef ADVANCED_RENDERER
 	perspectiveRayGeneratorKernel = cl::Kernel(program, "perspectiveRayGenerator", &status);
 	rayTraceAdvancedKernel = cl::Kernel(program, "rayTraceAdvanced", &status);
 	rayGeneratorKernel = cl::Kernel(program, "rayGenerator", &status);
@@ -490,7 +490,7 @@ void OpenClRayTracer::fetchRayTracerResult() {
 }
 
 void OpenClRayTracer::initializeAdvancedRender() {
-	const int max = 2;
+	const int max = 1;
 
 	rayBuffers.reserve(max + 1);
 	rayTreeBuffers.reserve(max);
@@ -507,18 +507,18 @@ void OpenClRayTracer::initializeAdvancedRender() {
 }
 
 void OpenClRayTracer::advancedRender(float16 matrix) {
-	const int max = 2;
-	int rayCount = width * height;
+	const int max = 1;
+	cl_int rayCount = width * height;
 	perspectiveRayGeneratorKernel.setArg(0, matrix);
 	perspectiveRayGeneratorKernel.setArg(1, rayBuffers[0]);
 	queue.enqueueNDRangeKernel(perspectiveRayGeneratorKernel, cl::NullRange, cl::NDRange(width, height));
 	queue.finish();
 
-	cl::Buffer rayCountBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(rayCount), &rayCount);
+	cl::Buffer rayCountBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &rayCount);
 	rayGeneratorKernel.setArg(1, rayCountBuffer);
 
 
-	std::vector<int> rayCounts;
+	std::vector<cl_int> rayCounts;
 	rayCounts.push_back(rayCount);
 
 	int instanceCount = objectInstances.size();
@@ -528,25 +528,36 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	rayTraceAdvancedKernel.setArg(3, transformedVertexBuffer);
 	rayTraceAdvancedKernel.setArg(6, rayCountBuffer);
 
+	//
+	//TODO: Add some sort of "primary ray raytracer-kernel" that always results in having width * height hits, so there will be a 1 - 1 hit to pixel mapping.
+	//			those hits that actually does not hit any geometry will get some sort of sky-values
+	//
 
 	int i = 0;
 	for (i = 0; i < max; i++) {
 		if (rayCount > (1 << i) * width * height)
-			system("pause");
+			throw std::exception("Too large rayCount! Probably caused by some syncronization bug");			//Probably caused by some syncronization bug
+
+		cl_int startIndex;
+
 		rayTraceAdvancedKernel.setArg(4, rayBuffers[i]);
-		rayTraceAdvancedKernel.setArg(5, hitBuffers[i]);
+		rayTraceAdvancedKernel.setArg(5, hitBuffers[i]);	
+		startIndex = 0;																				//
+		queue.enqueueWriteBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &startIndex);			//Reset rayIndex to 0
 		queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NullRange, cl::NDRange(rayCount));//));
 		queue.finish();
 
-		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(rayCount), &rayCount);	//Remove this line
+		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &rayCount);
 
 
 		rayGeneratorKernel.setArg(0, hitBuffers[i]);
 		rayGeneratorKernel.setArg(2, rayBuffers[i]);
 		rayGeneratorKernel.setArg(3, rayTreeBuffers[i]);
-		queue.enqueueNDRangeKernel(rayGeneratorKernel, cl::NullRange, cl::NDRange(rayCount));//rayCount));
+		startIndex = 0;																				//
+		queue.enqueueWriteBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &startIndex);			//Reset rayIndex to 0
+		queue.enqueueNDRangeKernel(rayGeneratorKernel, cl::NullRange, cl::NDRange(rayCount));
 		queue.finish();
-		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(rayCount), &rayCount);
+		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &rayCount);
 		rayCounts.push_back(rayCount);
 		queue.finish();							//TODO: Find out why I am needed
 	}
@@ -558,18 +569,21 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	for (int j = 0; j < rayTreeBuffers.size(); j++)
 		std::cout << "Saved buffer sizes: " << rayTreeBuffers[j].getInfo<CL_MEM_SIZE>() << std::endl;
 	for (i--; i > 0; i--) {
-		rayCount = rayCounts[i];
+		rayCount = rayCounts[i - 1];
 		//rayCounts.pop_back();
 
-		treeTraverserKernel.setArg(0, rayTreeBuffers[0]);//[i - 1]);
+		treeTraverserKernel.setArg(0, rayTreeBuffers[i - 1]);//[i - 1]);
 		treeTraverserKernel.setArg(1, rayTreeBuffers[i]);
-		queue.enqueueNDRangeKernel(treeTraverserKernel, cl::NullRange, cl::NDRange(32));//rayCount));
+		queue.enqueueNDRangeKernel(treeTraverserKernel, cl::NullRange, cl::NDRange(rayCount));
 		queue.finish();
 	}
 
 	colorToPixelKernel.setArg(0, rayTreeBuffers[0]);
 	colorToPixelKernel.setArg(1, resultImages[0]);
-	queue.enqueueNDRangeKernel(colorToPixelKernel, cl::NullRange, cl::NDRange(width * height));
+	queue.enqueueNDRangeKernel(colorToPixelKernel, cl::NullRange, cl::NDRange(width, height));
+	queue.finish();
+
+	fetchRayTracerResult();
 }
 
 

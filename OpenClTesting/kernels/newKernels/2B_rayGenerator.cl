@@ -1,11 +1,11 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
 
-void summarizeRays(global Ray* results, global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut, local atomic_int* groupResultCount);
+void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local int* groupResultCount);
 
 void kernel rayGenerator(
 	global const Hit* hits,
-	global atomic_int* rayIndex,
+	volatile global int* rayIndex,
 	global Ray* raysOut,
 	global RayTree* rayTrees
 ){
@@ -26,33 +26,47 @@ void kernel rayGenerator(
 	Ray reflection = reflect(hit);
 	Ray refraction = refract(hit);
 	
-	
+	//TODO: check if this is even needed, it's currently done on host
 	if(get_global_id(0)==0){																			// initialize rayIndex to 0
-        atomic_init(rayIndex, 0);
+        //atomic_init(rayIndex, 0);
+		*rayIndex = 0;
     }
 	
-	local atomic_int groupResultCount;
+	volatile local int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
-        atomic_init(&groupResultCount, 0);
+        //atomic_init(&groupResultCount, 0);
+		groupResultCount = 0;
     }
-    barrier(CLK_GLOBAL_MEM_FENCE);
+    barrier(CLK_LOCAL_MEM_FENCE);
 	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex, &groupResultCount);
+	
+	
+	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
+        //atomic_init(&groupResultCount, 0);
+		groupResultCount = 0;
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
 	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex, &groupResultCount);
 	
 	
-	
 	int g_i_d = get_global_id(0);
-	rayTree.reflectIndex = g_i_d;//reflectionIndex;
-	rayTree.refractIndex = g_i_d;//refractionIndex;
+	rayTree.reflectIndex = reflectionIndex;
+	rayTree.refractIndex = refractionIndex;
+	
+	/*printf("gid: %d\nreflectIndex: %d\nrefractIndex: %d\n\n",
+		get_global_id(0),
+		reflectionIndex,
+		refractionIndex
+	);*/
 	
 	//if(g_i_d < 32)
 	//	printf("gid: %d\n", g_i_d);
-	rayTrees[g_i_d] = rayTree;
+	rayTrees[gid] = rayTree;
 }
 
 
 
-void summarizeRays(global Ray* results, global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut, local atomic_int* groupResultCount){
+void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local int* groupResultCount){
 	
 	int groupIndex;
 	int privateIndex;
@@ -81,7 +95,7 @@ void summarizeRays(global Ray* results, global atomic_int* globalResultCount, Ra
 	}
 	*/
 	if(hasResult){
-		int index = atomic_fetch_add(globalResultCount, 1);
+		int index = atom_inc(globalResultCount);/*atomic_fetch_add((globalResultCount, 1);*/
 		*indexOut = index;
 		results[index] = result;
 	}

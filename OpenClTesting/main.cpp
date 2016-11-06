@@ -17,8 +17,8 @@
 
 int main()
 {
-	int width = 16;
-	int height = 16;
+	int width = 512;
+	int height = 512;
 
 
 	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
@@ -33,7 +33,7 @@ int main()
 
 
 
-#ifdef USE_CL_2_1
+#ifdef ADVANCED_RENDERER
 	openClRayTracer.initializeAdvancedRender();
 #endif
 	GLFWwindow* window = openClRayTracer.getWindow();
@@ -127,7 +127,7 @@ int main()
 		
 		//Start the actual Ray Tracing and draw result to the screen
 		
-#ifdef USE_CL_2_1
+#ifdef ADVANCED_RENDERER
 		openClRayTracer.advancedRender(cameraMatrix);
 #else
 		openClRayTracer.rayTrace(cameraMatrix);
@@ -139,7 +139,7 @@ int main()
 
 		//printf("sizeof(Instance): %d\n", sizeof(Instance));
 		//Increment angle value
-		v += 1e-2f;
+		//v += 1e-2f;
 	}
 	//system("pause");
     return 0;

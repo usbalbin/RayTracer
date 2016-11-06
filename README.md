@@ -8,6 +8,8 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 
 - If possible, increase number of threads per Mesh in "vertex-shader"-kernel. There is currently only 1 thread / Mesh.
 
+- Consider removing last run of the treeTraverser kernel with a modified version of the colorToPixel kernel.
+
 - Consider moving AABB step into "vertex-shader" if beneficial
 
 - Consider adding frustum culling step after AABB step
@@ -21,8 +23,4 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative through multiple kernels calls. One kernel for tracing rays and one for producing reflection/refraction rays on impacts. Repetedly call these
  multiple times and then collect the result through a third kernel.
 
-- Add a vertex-shader like step before the actual ray tracing. This step should translate every vertex in each mesh by a 4x4 model matrix.
-
-- Add AABB step between vertex-kernel and ray tracer for calculating the bounding box of every mesh after translation.
-
-- Make sure the "vertex-shader" has support for instanced drawing where multiple meshes with different matrices are added that are using the same vertices. Maybe implement by having a constant or stack-like model buffer containing all different mesh types and one mesh buffer with mesh objects for each induvidual object to draw, containing only a model matrix and reference to its mesh type. The "vertex-shader" should translate every instance's mesh to its own vertices that are placed as input to the raytracer.
+  -Add some sort of "primary ray raytracer-kernel". This is only to be run for the primary rays and always results in having exactly width * height hits, so there will be a 1 - 1 hit to pixel mapping. The hits will also be sorted so that the hit corresponding to the pixel at (x, y) can be found by hit[y * width + x]. The hits that actually does not hit any geometry will get some sort of sky-values.
