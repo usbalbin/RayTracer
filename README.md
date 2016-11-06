@@ -18,6 +18,11 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 
 - Consider "chaining" OpenCL kernels to free up some CPU-time and to help making other calculations on CPU without it having to launch kernel steps during rendering of image.
 
+- Look into what needs to be changed to support not only Windows but also Linux and Mac.
+  - OpenGL - CL interop
+  - get working directory for program.build()
+  - etc.
+
 ## WIP
 
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative through multiple kernels calls. One kernel for tracing rays and one for producing reflection/refraction rays on impacts. Repetedly call these
