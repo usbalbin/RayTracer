@@ -22,6 +22,8 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
   - OpenGL - CL interop
   - get working directory for program.build()
   - etc.
+  
+- Look into improving how the pixel color are computed. Good information at this site: http://www.flipcode.com/archives/Raytracing_Topics_Techniques-Part_2_Phong_Mirrors_and_Shadows.shtml
 
 ## WIP
 
