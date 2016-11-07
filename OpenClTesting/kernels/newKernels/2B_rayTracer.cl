@@ -4,8 +4,7 @@
 
 Hit sky(Ray ray);
 bool traceBruteForceColor(int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Ray ray, Vertex* intersectionPoint);
-void summarizeHits(global Hit* results, global int* globalResultCount, Hit result, bool hasResult);//, local atomic_int* groupResultCount);
-void summarizeHitsNew(global Hit* results, volatile global int* globalResultCount, Hit result, bool hasResult);
+
 
 Vertex interpolateTriangle(Triangle triangle, float2 uv);
 float4 interpolate4(float4 a, float4 b, float4 c, float2 uv);

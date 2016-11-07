@@ -206,8 +206,7 @@ Ray genPerspectiveRay(float16 matrix) {
 
 Hit sky(Ray ray);
 bool traceBruteForceColor(int objectCount, global const Object* allObjects, global const TriangleIndices* allTriangles, global const Vertex* allVertices, Ray ray, Vertex* intersectionPoint);
-void summarizeHits(global Hit* results, global int* globalResultCount, Hit result, bool hasResult);//, local atomic_int* groupResultCount);
-void summarizeHitsNew(global Hit* results, volatile global int* globalResultCount, Hit result, bool hasResult);
+
 
 Vertex interpolateTriangle(Triangle triangle, float2 uv);
 float4 interpolate4(float4 a, float4 b, float4 c, float2 uv);
@@ -372,6 +371,7 @@ Triangle getTriangle(global const TriangleIndices* trianglesIndices, global cons
 
 
 void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);//, volatile local int* groupResultCount);
+void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);
 
 void kernel rayGenerator(
 	global const Hit* hits,
@@ -457,35 +457,34 @@ void summarizeRays(global Ray* results, volatile global atomic_int* globalResult
 	
 }
 
-#if 0
-void summarizeHitsNew(global Hit* results, volatile global int* globalResultCount, Hit result, bool hasResult){
+
+void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut){
 	int groupIndex;
 	int privateIndex;
 	
-	bool someInGroupHasResult = work_group_any(hasResult);
+	bool someInGroupHasResult = false;//work_group_any(hasResult);
 	
 	if(someInGroupHasResult){
-		bool allInGroupHasResult = work_group_all(hasResult);
+		bool allInGroupHasResult = false;//work_group_all(hasResult);
 		privateIndex = allInGroupHasResult ?
 			get_local_id(0) :
 			work_group_scan_exclusive_add(hasResult ? 1 : 0);
-	}
-	
-	barrier(CLK_GLOBAL_MEM_FENCE);
-	
-	if(someInGroupHasResult){
+
+			
 		if(get_local_id(0) == get_local_size(0) - 1){
 			int groupResultCount = privateIndex + (hasResult ? 1 : 0);
-			groupIndex = atom_add/*atomic_fetch_add*/(globalResultCount, groupResultCount);
+			groupIndex = atomic_fetch_add(globalResultCount, groupResultCount);
 		}
 	}
 	
+	
+	barrier(CLK_LOCAL_MEM_FENCE);
 	if(hasResult){
 		int index = groupIndex + privateIndex;
+		*indexOut = index;
 		results[index] = result;
 	}
 }
-#endif
 
 
 

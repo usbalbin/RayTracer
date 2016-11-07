@@ -6,6 +6,8 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 
 - Make sure there is CPU-compute support and remove depricated "DebugRayTracer"
 
+- Fix the window resize-functionality, currently crashing when using advancedRender
+
 - Add support for multiple AABBs per mesh so there will be fewer triangles(expensive) to check for intersection per AABB(cheap) to improve performance.
 
 - If possible, increase number of threads per Mesh in "vertex-shader"-kernel. There is currently only 1 thread / Mesh.
@@ -35,4 +37,4 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative through multiple kernels calls. One kernel for tracing rays and one for producing reflection/refraction rays on impacts. Repetedly call these
  multiple times and then collect the result through a third kernel.
 
-  -Look into whether treeTraverser's rayTrees are valid or why there are random flickeringpixels when enabling reflection and refraction
+  -Look into why there are random flickeringpixels when increasing resolution or object count

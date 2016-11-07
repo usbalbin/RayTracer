@@ -107,12 +107,12 @@ int main()
 			cubeTypeBuilder
 		));
 
-		/*
-		for (int z = -2; z < 2; z++)
-			for (int y = -2; y < 2; y++)
-				for (int x = -2; x < 2; x++)
+		
+		for (int z = 0; z < 1; z++)
+			for (int y = 0; y < 1; y++)
+				for (int x = 0; x < 1; x++)
 					openClRayTracer.push_back(Instance(glm::translate(float16(1.0f), float3(-2.0f - x, y, z)), sphereTypeBuilder));
-		*/
+		
 		//Resize buffers to fit the stuff to be drawn,
 		//only needs to be callen when more/larger stuff has been added since last resize
 		openClRayTracer.autoResize();//TODO: this is rather expensive, remove me if possible 

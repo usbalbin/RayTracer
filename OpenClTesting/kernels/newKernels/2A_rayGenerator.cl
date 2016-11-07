@@ -1,6 +1,7 @@
 
 
 void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);//, volatile local int* groupResultCount);
+void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);
 
 void kernel rayGenerator(
 	global const Hit* hits,
@@ -86,32 +87,31 @@ void summarizeRays(global Ray* results, volatile global atomic_int* globalResult
 	
 }
 
-#if 0
-void summarizeHitsNew(global Hit* results, volatile global int* globalResultCount, Hit result, bool hasResult){
+
+void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut){
 	int groupIndex;
 	int privateIndex;
 	
-	bool someInGroupHasResult = work_group_any(hasResult);
+	bool someInGroupHasResult = false;//work_group_any(hasResult);
 	
 	if(someInGroupHasResult){
-		bool allInGroupHasResult = work_group_all(hasResult);
+		bool allInGroupHasResult = false;//work_group_all(hasResult);
 		privateIndex = allInGroupHasResult ?
 			get_local_id(0) :
 			work_group_scan_exclusive_add(hasResult ? 1 : 0);
-	}
-	
-	barrier(CLK_GLOBAL_MEM_FENCE);
-	
-	if(someInGroupHasResult){
+
+			
 		if(get_local_id(0) == get_local_size(0) - 1){
 			int groupResultCount = privateIndex + (hasResult ? 1 : 0);
-			groupIndex = atom_add/*atomic_fetch_add*/(globalResultCount, groupResultCount);
+			groupIndex = atomic_fetch_add(globalResultCount, groupResultCount);
 		}
 	}
 	
+	
+	barrier(CLK_LOCAL_MEM_FENCE);
 	if(hasResult){
 		int index = groupIndex + privateIndex;
+		*indexOut = index;
 		results[index] = result;
 	}
 }
-#endif
