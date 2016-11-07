@@ -7,6 +7,8 @@
 #include "stdafx.h"
 
 #include <iostream>
+#include <chrono>
+#include <algorithm>
 
 #include "OpenClRayTracer.hpp"
 #include "OpenClContexts.hpp"
@@ -19,7 +21,7 @@ int main()
 {
 	int width = 512;
 	int height = 512;
-
+	
 
 	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
 	int maxTotalVertexCount = 3;// 129; //Same here
@@ -73,7 +75,12 @@ int main()
 
 	std::cout << "Finished initializing(completely)..." << std::endl;
 	float v = 0;//3.14159265f / 1.0f;
+	auto lastTime = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(window)) {
+		auto nowTime = std::chrono::high_resolution_clock::now();
+		float deltaTime = std::chrono::duration<float>(nowTime - lastTime).count();
+		lastTime = nowTime;
+
 		//Set up a matrix for the cameras position and orientation
 		//Note!: Unlike OpenGL/Direct3D this matrix does not hold any perspective or projection information, 
 		//ONLY the cameras position and orientation!
@@ -139,7 +146,10 @@ int main()
 
 		//printf("sizeof(Instance): %d\n", sizeof(Instance));
 		//Increment angle value
-		//v += 1e-2f;
+
+		const float turnRate = 0.5f;//Rads/sec
+		const float maxTimeStep = 0.1f;
+		v += turnRate * std::min(deltaTime, maxTimeStep);
 	}
 	//system("pause");
     return 0;

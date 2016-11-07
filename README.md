@@ -4,6 +4,8 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 ## TODO:
 - Rename "Object" struct to "Mesh"
 
+- Make sure there is CPU-compute support and remove depricated "DebugRayTracer"
+
 - Add support for multiple AABBs per mesh so there will be fewer triangles(expensive) to check for intersection per AABB(cheap) to improve performance.
 
 - If possible, increase number of threads per Mesh in "vertex-shader"-kernel. There is currently only 1 thread / Mesh.
@@ -21,7 +23,10 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 - Look into what needs to be changed to support not only Windows but also Linux and Mac.
   - OpenGL - CL interop
   - get working directory for program.build()
+  - system("pause")
   - etc.
+
+- Add read_only,write_only,const and similar properties in kernels
 
 ## WIP
 

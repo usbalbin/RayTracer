@@ -19,12 +19,14 @@ typedef union {
 		float reflectDuffusion;
 	};
 	
-}Color;*/
+}Material;*/
 
 typedef struct {
 	float4 color;
 	float3 normal;
 	float3 position;
+	float reflectFactor;
+	float refractFactor;
 }Vertex;
 
 typedef struct {

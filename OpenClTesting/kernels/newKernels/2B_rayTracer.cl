@@ -13,6 +13,7 @@ void summarizeHitsNew(global Hit* results, volatile global int* globalResultCoun
 Vertex interpolateTriangle(Triangle triangle, float2 uv);
 float4 interpolate4(float4 a, float4 b, float4 c, float2 uv);
 float3 interpolate3(float3 a, float3 b, float3 c, float2 uv);
+float interpolate1(float a, float b, float c, float2 uv);
 
 
 global const Vertex* getVertices(global const Vertex* allVertices, Object object);
@@ -67,6 +68,12 @@ void kernel rayTraceAdvanced(
     barrier(CLK_GLOBAL_MEM_FENCE);
 	summarizeHits(hits, hitCount, hit, wasHit, &groupResultCount);
 	*/
+	
+	/*printf(
+		"In Ray: pos = %2.6v3hlf, dir = %2.1v3hlf\n",
+		hit.ray.position, hit.ray.direction
+	);*/
+	
 	summarizeHits(hits, hitCount, hit, wasHit);
 }
 
@@ -102,11 +109,18 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 		}
 	}
 	
-	//if(closestTriangleDist == FLT_MAX)
-	//	return false;
+	if(closestTriangleDist == FLT_MAX){
+		//printf("Ray did not hit anything!!!");
+		return false;
+	}
 
 	*intersectionPoint = interpolateTriangle(closestTriangle, closestUv);
 	
+	
+	float3 lightDir = normalize((float3)(-0.9f, 0.5f, 0.2f));
+	(*intersectionPoint).color *= dot((*intersectionPoint).normal, -lightDir) * 0.5f + 0.5f;
+	
+	//printf(" - Ray actually hit something!!!");
 	return true;//(float4)((float)(int)closestTriangleDist);
 }
 
@@ -180,6 +194,9 @@ Vertex interpolateTriangle(Triangle triangle, float2 uv){
 	result.position = interpolate3(triangle.a.position, triangle.b.position, triangle.c.position, uv);
 	result.normal = interpolate3(triangle.a.normal, triangle.b.normal, triangle.c.normal, uv);
 	result.color = interpolate4(triangle.a.color, triangle.b.color, triangle.c.color, uv);
+	result.reflectFactor = interpolate1(triangle.a.reflectFactor, triangle.b.reflectFactor, triangle.c.reflectFactor, uv);
+	result.refractFactor = interpolate1(triangle.a.refractFactor, triangle.b.refractFactor, triangle.c.refractFactor, uv);
+	
 	return result;
 }
 
@@ -192,6 +209,14 @@ float4 interpolate4(float4 a, float4 b, float4 c, float2 uv){
 }
 
 float3 interpolate3(float3 a, float3 b, float3 c, float2 uv){
+	float bFactor = uv.x;
+	float cFactor = uv.y;
+	float aFactor = 1 - uv.x - uv.y;
+	
+	return a * aFactor + b * bFactor + c * cFactor;
+}
+
+float interpolate1(float a, float b, float c, float2 uv){
 	float bFactor = uv.x;
 	float cFactor = uv.y;
 	float aFactor = 1 - uv.x - uv.y;

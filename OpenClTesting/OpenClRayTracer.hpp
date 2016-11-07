@@ -11,6 +11,7 @@
 
 #define ADVANCED_RENDERER
 //#define RUN_ON_CPU
+#define RAY_DEPTH 2
 
 class OpenClRayTracer
 {
@@ -74,6 +75,7 @@ private:
 	cl::Kernel debugKernel;
 
 	cl::Kernel perspectiveRayGeneratorKernel;
+	cl::Kernel primaryRayTraceKernel;
 	cl::Kernel rayTraceAdvancedKernel;
 	cl::Kernel rayGeneratorKernel;
 	cl::Kernel treeTraverserKernel;

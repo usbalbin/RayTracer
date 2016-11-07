@@ -12,8 +12,8 @@ void kernel rayGenerator(
 	RayTree rayTree;
 	Hit hit = hits[gid];
 	rayTree.color = hit.vertex.color;
-	rayTree.reflectFactor = 0.5f/*hit.vertex.reflectFactor*/;
-	rayTree.refractFactor = 0.5f/*hit.vertex.refractFactor*/;
+	rayTree.reflectFactor = hit.vertex.reflectFactor;
+	rayTree.refractFactor = hit.vertex.refractFactor;
 
 
 	bool hasReflection = rayTree.reflectFactor > 0;
@@ -25,6 +25,17 @@ void kernel rayGenerator(
 	
 	Ray reflection = reflect(hit);
 	Ray refraction = refract(hit);
+	
+	/*printf(
+		"In Ray:      poi = %2.6v3hlf, dir = %2.1v3hlf\n"
+		"Reflect Ray: pos = %2.6v3hlf, dir = %2.1v3hlf\n"
+		"Refract Ray: pos = %2.6v3hlf, dir = %2.1v3hlf\n\n",
+		
+		hit.vertex.position, hit.ray.direction,
+		reflection.position, reflection.direction,
+		refraction.position, refraction.direction
+	);*/
+	
 	
 	//TODO: check if this is even needed, it's currently done on host
 	if(get_global_id(0)==0){																			// initialize rayIndex to 0
@@ -53,11 +64,12 @@ void kernel rayGenerator(
 	rayTree.reflectIndex = reflectionIndex;
 	rayTree.refractIndex = refractionIndex;
 	
-	/*printf("gid: %d\nreflectIndex: %d\nrefractIndex: %d\n\n",
+	/*printf("gid: %d\nreflectFactor: %f\nrefractFactor: %f\n\n",
 		get_global_id(0),
-		reflectionIndex,
-		refractionIndex
+		rayTree.reflectFactor,
+		rayTree.reflectFactor
 	);*/
+	
 	
 	//if(g_i_d < 32)
 	//	printf("gid: %d\n", g_i_d);
