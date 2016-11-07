@@ -33,4 +33,4 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative through multiple kernels calls. One kernel for tracing rays and one for producing reflection/refraction rays on impacts. Repetedly call these
  multiple times and then collect the result through a third kernel.
 
-  - Add some sort of "primary ray raytracer-kernel". This is only to be run for the primary rays and always results in having exactly width * height hits, so there will be a 1 - 1 hit to pixel mapping. The hits will also be sorted so that the hit corresponding to the pixel at (x, y) can be found by hit[y * width + x]. The hits that actually does not hit any geometry will get some sort of sky-values.
+  -Look into whether treeTraverser's rayTrees are valid or why there are random flickeringpixels when enabling reflection and refraction
