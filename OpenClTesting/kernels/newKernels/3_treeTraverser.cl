@@ -9,8 +9,10 @@ void kernel treeTraverser(
 	global RayTree* rayTrees,
 	global read_only RayTree* childRayTrees
 ){
-	int reflectIndex = rayTrees[get_global_id(0)].reflectIndex;
-	int refractIndex = rayTrees[get_global_id(0)].refractIndex;
+	int reflectIndex = rayTrees[gid].reflectIndex;
+	int refractIndex = rayTrees[gid].refractIndex;
+	
+	float4 surfaceColor = rayTrees[gid].color;
 	
 	if(reflectIndex != -1){
 		rayTrees[gid].color += rayTrees[gid].reflectFactor * childRayTrees[reflectIndex].color;

@@ -401,6 +401,7 @@ void summarizeHits(global Hit* results, volatile global int* globalResultCount, 
 	*/																								//groupIndex has been recieved
     if(hasResult){
 		int index = atom_add/*atomic_fetch_add*/(globalResultCount, 1);
+		index = gid;
 		results[index] = result;
 		//printf("Current index: %d\n", index);
 	}
@@ -498,7 +499,7 @@ Triangle getTriangle(global const TriangleIndices* trianglesIndices, global cons
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
 
-void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local int* groupResultCount);
+void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut);//, volatile local int* groupResultCount);
 
 void kernel rayGenerator(
 	global const Hit* hits,
@@ -513,15 +514,15 @@ void kernel rayGenerator(
 	rayTree.refractFactor = hit.vertex.refractFactor;
 
 
-	bool hasReflection = rayTree.reflectFactor > 0;
-	bool hasRefraction = rayTree.refractFactor > 0;
+	bool hasReflection = true;//rayTree.reflectFactor > 0;
+	bool hasRefraction = false;//rayTree.refractFactor > 0;
 	int reflectionIndex = -1;
 	int refractionIndex = -1;
 	
 	
 	
 	Ray reflection = reflect(hit);
-	Ray refraction = refract(hit);
+	//Ray refraction = refract(hit);
 	
 	/*printf(
 		"In Ray:      poi = %2.6v3hlf, dir = %2.1v3hlf\n"
@@ -535,29 +536,29 @@ void kernel rayGenerator(
 	
 	
 	//TODO: check if this is even needed, it's currently done on host
-	if(get_global_id(0)==0){																			// initialize rayIndex to 0
+	/*if(get_global_id(0)==0){																			// initialize rayIndex to 0
         //atomic_init(rayIndex, 0);
 		*rayIndex = 0;
     }
-	
+	*//*
 	volatile local int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         //atomic_init(&groupResultCount, 0);
 		groupResultCount = 0;
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
-	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex, &groupResultCount);
+    barrier(CLK_LOCAL_MEM_FENCE);*/
+	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex);//, &groupResultCount);
 	
 	
-	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
+	/*if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         //atomic_init(&groupResultCount, 0);
 		groupResultCount = 0;
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
-	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex, &groupResultCount);
+    barrier(CLK_LOCAL_MEM_FENCE);*/
+	//summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex);//, &groupResultCount);
 	
 	
-	int g_i_d = get_global_id(0);
+	//int g_i_d = get_global_id(0);
 	rayTree.reflectIndex = reflectionIndex;
 	rayTree.refractIndex = refractionIndex;
 	
@@ -575,7 +576,7 @@ void kernel rayGenerator(
 
 
 
-void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local int* groupResultCount){
+void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut){//, volatile local int* groupResultCount){
 	
 	int groupIndex;
 	int privateIndex;
@@ -603,11 +604,12 @@ void summarizeRays(global Ray* results, volatile global int* globalResultCount, 
 		results[index] = result;
 	}
 	*/
-	if(hasResult){
+	//if(hasResult){
 		int index = atom_inc(globalResultCount);/*atomic_fetch_add((globalResultCount, 1);*/
+		index = gid;
 		*indexOut = index;
 		results[index] = result;
-	}
+	//}
 	
 }
 
@@ -621,8 +623,10 @@ void kernel treeTraverser(
 	global RayTree* rayTrees,
 	global read_only RayTree* childRayTrees
 ){
-	int reflectIndex = rayTrees[get_global_id(0)].reflectIndex;
-	int refractIndex = rayTrees[get_global_id(0)].refractIndex;
+	int reflectIndex = rayTrees[gid].reflectIndex;
+	int refractIndex = rayTrees[gid].refractIndex;
+	
+	float4 surfaceColor = rayTrees[gid].color;
 	
 	if(reflectIndex != -1){
 		rayTrees[gid].color += rayTrees[gid].reflectFactor * childRayTrees[reflectIndex].color;
