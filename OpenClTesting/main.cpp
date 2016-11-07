@@ -149,7 +149,7 @@ int main()
 
 		const float turnRate = 0.5f;//Rads/sec
 		const float maxTimeStep = 0.1f;
-		//v += turnRate * std::min(deltaTime, maxTimeStep);
+		v += turnRate * std::min(deltaTime, maxTimeStep);
 	}
 	//system("pause");
     return 0;

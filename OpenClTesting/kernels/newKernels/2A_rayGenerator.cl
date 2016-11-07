@@ -1,11 +1,10 @@
-#pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
-#pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
 
-void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut);//, volatile local int* groupResultCount);
+
+void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);//, volatile local int* groupResultCount);
 
 void kernel rayGenerator(
 	global const Hit* hits,
-	volatile global int* rayIndex,
+	volatile global atomic_int* rayIndex,
 	global Ray* raysOut,
 	global RayTree* rayTrees
 ){
@@ -17,32 +16,16 @@ void kernel rayGenerator(
 
 
 	bool hasReflection = rayTree.reflectFactor > 0;
-	bool hasRefraction = false;//rayTree.refractFactor > 0;
+	bool hasRefraction = rayTree.refractFactor > 0;
 	int reflectionIndex = -1;
 	int refractionIndex = -1;
 	
 	
 	
 	Ray reflection = reflect(hit);
-	//Ray refraction = refract(hit);
+	Ray refraction = refract(hit);
 	
-	/*printf(
-		"In Ray:      poi = %2.6v3hlf, dir = %2.1v3hlf\n"
-		"Reflect Ray: pos = %2.6v3hlf, dir = %2.1v3hlf\n"
-		"Refract Ray: pos = %2.6v3hlf, dir = %2.1v3hlf\n\n",
-		
-		hit.vertex.position, hit.ray.direction,
-		reflection.position, reflection.direction,
-		refraction.position, refraction.direction
-	);*/
-	
-	
-	//TODO: check if this is even needed, it's currently done on host
-	/*if(get_global_id(0)==0){																			// initialize rayIndex to 0
-        //atomic_init(rayIndex, 0);
-		*rayIndex = 0;
-    }
-	*//*
+	/*
 	volatile local int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         //atomic_init(&groupResultCount, 0);
@@ -50,35 +33,24 @@ void kernel rayGenerator(
     }
     barrier(CLK_LOCAL_MEM_FENCE);*/
 	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex);//, &groupResultCount);
-	
+
 	
 	/*if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         //atomic_init(&groupResultCount, 0);
 		groupResultCount = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE);*/
-	//summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex);//, &groupResultCount);
+	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex);//, &groupResultCount);
 	
-	
-	//int g_i_d = get_global_id(0);
 	rayTree.reflectIndex = reflectionIndex;
 	rayTree.refractIndex = refractionIndex;
 	
-	/*printf("gid: %d\nreflectFactor: %f\nrefractFactor: %f\n\n",
-		get_global_id(0),
-		rayTree.reflectFactor,
-		rayTree.reflectFactor
-	);*/
-	
-	
-	//if(g_i_d < 32)
-	//	printf("gid: %d\n", g_i_d);
 	rayTrees[gid] = rayTree;
 }
 
 
 
-void summarizeRays(global Ray* results, volatile global int* globalResultCount, Ray result, bool hasResult, int* indexOut){//, volatile local int* groupResultCount){
+void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut){//, volatile local int* groupResultCount){
 	
 	int groupIndex;
 	int privateIndex;
@@ -107,9 +79,39 @@ void summarizeRays(global Ray* results, volatile global int* globalResultCount, 
 	}
 	*/
 	if(hasResult){
-		int index = atom_inc(globalResultCount);/*atomic_fetch_add((globalResultCount, 1);*/
+		int index = atomic_fetch_add(globalResultCount, 1);
 		*indexOut = index;
 		results[index] = result;
 	}
 	
 }
+
+#if 0
+void summarizeHitsNew(global Hit* results, volatile global int* globalResultCount, Hit result, bool hasResult){
+	int groupIndex;
+	int privateIndex;
+	
+	bool someInGroupHasResult = work_group_any(hasResult);
+	
+	if(someInGroupHasResult){
+		bool allInGroupHasResult = work_group_all(hasResult);
+		privateIndex = allInGroupHasResult ?
+			get_local_id(0) :
+			work_group_scan_exclusive_add(hasResult ? 1 : 0);
+	}
+	
+	barrier(CLK_GLOBAL_MEM_FENCE);
+	
+	if(someInGroupHasResult){
+		if(get_local_id(0) == get_local_size(0) - 1){
+			int groupResultCount = privateIndex + (hasResult ? 1 : 0);
+			groupIndex = atom_add/*atomic_fetch_add*/(globalResultCount, groupResultCount);
+		}
+	}
+	
+	if(hasResult){
+		int index = groupIndex + privateIndex;
+		results[index] = result;
+	}
+}
+#endif

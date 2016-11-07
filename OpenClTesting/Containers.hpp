@@ -56,7 +56,7 @@ union Color {
 struct Vertex {
 	Vertex() {}
 	Vertex(float3 position, float4 color) : position(position), color(color), normal(0.0f) {}
-	Vertex(float3 position, float4 color, float3 normal) : position(position), color(color), normal(normal), reflectFactor(1.0f), refractFactor(0.0f) {}
+	Vertex(float3 position, float4 color, float3 normal) : position(position), color(color), normal(normal), reflectFactor(0.5f), refractFactor(0.25f) {}
 	//Vertex(float3 position, Color color, float3 normal) : position(position), color(color), normal(normal) {}
 	float4 color;
 	__declspec(align(4 * sizeof(float))) float3 normal;
