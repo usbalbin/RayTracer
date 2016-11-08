@@ -22,7 +22,7 @@ float16 mulMat_old(float16 m1, float16 m2){
 */
 
 Ray reflect(Hit hit){
-	const float epsilon = 1e-7f;
+	const float epsilon = 1e-6f;
 	const Ray rayIn = hit.ray;
 	const Vertex poi = hit.vertex;
 	
@@ -41,7 +41,7 @@ Ray reflect(Hit hit){
  * TODO add support for refraction index
  */
 Ray refract(Hit hit){
-	const float epsilon = 1e-7f;
+	const float epsilon = 1e-6f;
 	const Ray rayIn = hit.ray;
 	const Vertex poi = hit.vertex;
 	

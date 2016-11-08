@@ -11,7 +11,7 @@
 
 #define ADVANCED_RENDERER
 //#define RUN_ON_CPU
-#define RAY_DEPTH 2
+#define RAY_DEPTH 3
 
 class OpenClRayTracer
 {

@@ -498,6 +498,7 @@ void OpenClRayTracer::initializeAdvancedRender() {
 }
 
 void OpenClRayTracer::advancedRender(float16 matrix) {
+	queue.finish();
 	cl_int rayCount = width * height;
 	perspectiveRayGeneratorKernel.setArg(0, matrix);
 	perspectiveRayGeneratorKernel.setArg(1, rayBuffers[0]);
@@ -507,11 +508,6 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 
 	
 
-
-	//
-	//TODO: Add some sort of "primary ray raytracer-kernel" that always results in having width * height hits, so there will be a 1 - 1 hit to pixel mapping.
-	//			those hits that actually does not hit any geometry will get some sort of sky-values
-	//
 	int instanceCount = objectInstances.size();
 	rayTraceAdvancedKernel.setArg(0, sizeof(instanceCount), &instanceCount);
 	rayTraceAdvancedKernel.setArg(1, transformedObjectBuffer);
@@ -531,24 +527,20 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	rayGeneratorKernel.setArg(1, rayCountBuffer);
 
 
-	std::vector<cl_int> rayCounts;
-	rayCounts.push_back(rayCount);
+	std::vector<cl_int> rayCounts(RAY_DEPTH);
 
-	
-	rayTraceAdvancedKernel.setArg(0, sizeof(instanceCount), &instanceCount);
-	rayTraceAdvancedKernel.setArg(1, transformedObjectBuffer);
-	rayTraceAdvancedKernel.setArg(2, objectTypeIndexBuffer);
-	rayTraceAdvancedKernel.setArg(3, transformedVertexBuffer);
 
 
 	int i;
-	for (i = 0; i < RAY_DEPTH && rayCount; i++) {//Continue until maximum ray depth is reached or no more rays left to trace
+	for (i = 0; i < RAY_DEPTH; i++) {//Continue until maximum ray depth is reached or no more rays left to trace
 		if (rayCount > (1 << i) * width * height)
 			throw std::exception("Too large rayCount! Probably caused by some bug");			//Probably caused by some syncronization bug
 
 
-		cl_int startIndex;
 
+		rayCounts[i] = rayCount;
+
+		cl_int startIndex;
 		rayGeneratorKernel.setArg(0, hitBuffers[i]);
 		rayGeneratorKernel.setArg(2, rayBuffers[i]);
 		rayGeneratorKernel.setArg(3, rayTreeBuffers[i]);
@@ -557,7 +549,6 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 		queue.enqueueNDRangeKernel(rayGeneratorKernel, cl::NullRange, cl::NDRange(rayCount));
 		queue.finish();
 		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &rayCount);
-		rayCounts.push_back(rayCount);
 
 		if (!rayCount)//No rays left to trace(parents weren't refractive/reflective)
 			break;
@@ -570,12 +561,7 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 
 	}
 	
-	//rayCounts.pop_back(); //Remove last element, last set of rays wont be used 
-	for (int j = 0; j < rayCounts.size(); j++)
-		std::cout << "Saved raycounts: " << rayCounts[j] << std::endl;
-	
-	for (int j = 0; j < rayTreeBuffers.size(); j++)
-		std::cout << "Saved buffer sizes: " << rayTreeBuffers[j].getInfo<CL_MEM_SIZE>() << std::endl;
+
 	for (i--; i > 0; i--) {
 		rayCount = rayCounts[i - 1];
 		//rayCounts.pop_back();

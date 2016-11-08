@@ -370,7 +370,7 @@ Triangle getTriangle(global const TriangleIndices* trianglesIndices, global cons
 }
 
 
-void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);//, volatile local int* groupResultCount);
+void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local atomic_int* groupResultCount);
 void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);
 
 void kernel rayGenerator(
@@ -396,22 +396,22 @@ void kernel rayGenerator(
 	Ray reflection = reflect(hit);
 	Ray refraction = refract(hit);
 	
-	/*
-	volatile local int groupResultCount;
+	
+	volatile local atomic_int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
-        //atomic_init(&groupResultCount, 0);
-		groupResultCount = 0;
+        atomic_init(&groupResultCount, 0);
+		//groupResultCount = 0;
     }
-    barrier(CLK_LOCAL_MEM_FENCE);*/
-	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex);//, &groupResultCount);
+    barrier(CLK_LOCAL_MEM_FENCE);
+	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex, &groupResultCount);
 
 	
-	/*if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
-        //atomic_init(&groupResultCount, 0);
-		groupResultCount = 0;
+	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
+        atomic_init(&groupResultCount, 0);
+		//groupResultCount = 0;
     }
-    barrier(CLK_LOCAL_MEM_FENCE);*/
-	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex);//, &groupResultCount);
+    barrier(CLK_LOCAL_MEM_FENCE);
+	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex, &groupResultCount);
 	
 	rayTree.reflectIndex = reflectionIndex;
 	rayTree.refractIndex = refractionIndex;
@@ -421,13 +421,13 @@ void kernel rayGenerator(
 
 
 
-void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut){//, volatile local int* groupResultCount){
-	
+void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local atomic_int* groupResultCount){
+	/*
 	int groupIndex;
 	int privateIndex;
 	
 	
-	/*if(hasResult){																					// Everyone with a result will reserve themselves an index
+	if(hasResult){																					// Everyone with a result will reserve themselves an index
 		privateIndex = atomic_fetch_add(groupResultCount, 1);
 		//privateIndex = atomic_fetch_add_explicit(groupResultCount, 1,
 		//					memory_order_relaxed, memory_scope_work_group);
@@ -447,8 +447,8 @@ void summarizeRays(global Ray* results, volatile global atomic_int* globalResult
 		int index = groupIndex + privateIndex;
 		*indexOut = index;
 		results[index] = result;
-	}
-	*/
+	}*/
+	
 	if(hasResult){
 		int index = atomic_fetch_add(globalResultCount, 1);
 		*indexOut = index;
@@ -462,16 +462,17 @@ void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalRes
 	int groupIndex;
 	int privateIndex;
 	
-	bool someInGroupHasResult = false;//work_group_any(hasResult);
+	bool someInGroupHasResult = work_group_any(hasResult);
 	
 	if(someInGroupHasResult){
-		bool allInGroupHasResult = false;//work_group_all(hasResult);
+		bool allInGroupHasResult = work_group_all(hasResult);
 		privateIndex = allInGroupHasResult ?
 			get_local_id(0) :
 			work_group_scan_exclusive_add(hasResult ? 1 : 0);
-
+		
+		barrier(CLK_LOCAL_MEM_FENCE);
 			
-		if(get_local_id(0) == get_local_size(0) - 1){
+		if(get_local_id(0) == 0){
 			int groupResultCount = privateIndex + (hasResult ? 1 : 0);
 			groupIndex = atomic_fetch_add(globalResultCount, groupResultCount);
 		}
