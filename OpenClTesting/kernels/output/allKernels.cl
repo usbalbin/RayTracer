@@ -503,11 +503,11 @@ void kernel treeTraverser(
 	float4 surfaceColor = rayTrees[gid].color;
 	
 	if(reflectIndex != -1){
-		rayTrees[gid].color += rayTrees[gid].reflectFactor * childRayTrees[reflectIndex].color;
+		rayTrees[gid].color += surfaceColor * rayTrees[gid].reflectFactor * childRayTrees[reflectIndex].color;
 	}
 	
 	if(refractIndex != -1){
-		rayTrees[gid].color += rayTrees[gid].refractFactor * childRayTrees[refractIndex].color;
+		rayTrees[gid].color += surfaceColor * rayTrees[gid].refractFactor * childRayTrees[refractIndex].color;
 		
 	}
 	/*

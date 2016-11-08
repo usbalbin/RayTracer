@@ -40,15 +40,18 @@ std::vector<TriangleIndices> genCubeIndices() {
 
 
 std::vector<Vertex> genInvertedCubeVertices(float size) {
+	const float reflectFactor = 0.25f;
+	const float refractFactor = 0.0f;
+
 	std::vector<Vertex> invertedCubeVertices{
-		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, +1.0f), 0.5f, 0.0f), Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, 0.0f,  +1.0f), 0.5f, 0.0f), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, +1.0f), 0.5f, 0.0f), Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, +1.0f), 0.5f, 0.0f), //front
-		Vertex(float3(-size, -size, +size), float4(0.0f, 0.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), 0.5f, 0.0f), Vertex(float3(+size, -size, +size), float4(1.0f, 0.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), 0.5f, 0.0f), Vertex(float3(+size, +size, +size), float4(1.0f, 1.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), 0.5f, 0.0f), Vertex(float3(-size, +size, +size), float4(0.0f, 1.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), 0.5f, 0.0f), //back
+		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, +1.0f), reflectFactor, refractFactor), Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, 0.0f,  +1.0f), reflectFactor, refractFactor), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, +1.0f), reflectFactor, refractFactor), Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(0.0f,  0.0f, +1.0f), reflectFactor, refractFactor), //front
+		Vertex(float3(-size, -size, +size), float4(0.0f, 0.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), reflectFactor, refractFactor), Vertex(float3(+size, -size, +size), float4(1.0f, 0.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), reflectFactor, refractFactor), Vertex(float3(+size, +size, +size), float4(1.0f, 1.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), reflectFactor, refractFactor), Vertex(float3(-size, +size, +size), float4(0.0f, 1.0f, 1.0f, 1.0f), float3(0.0f,  0.0f, -1.0f), reflectFactor, refractFactor), //back
 
-		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(-size, -size, +size), float4(0.0f, 0.0f, 1.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(-size, +size, +size), float4(0.0f, 1.0f, 1.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), 0.5f, 0.0f), //left
-		Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, -size, +size), float4(1.0f, 0.0f, 1.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, +size, +size), float4(1.0f, 1.0f, 1.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), 0.5f, 0.0f), //right
+		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(-size, -size, +size), float4(0.0f, 0.0f, 1.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(-size, +size, +size), float4(0.0f, 1.0f, 1.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(+1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), //left
+		Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, -size, +size), float4(1.0f, 0.0f, 1.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, +size, +size), float4(1.0f, 1.0f, 1.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(-1.0f,  0.0f,  0.0f), reflectFactor, refractFactor), //right
 
-		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, -size, +size), float4(1.0f, 0.0f, 1.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(-size, -size, +size), float4(0.0f, 0.0f, 1.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), 0.5f, 0.0f), //bottom
-		Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(+size, +size, +size), float4(1.0f, 1.0f, 1.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), 0.5f, 0.0f), Vertex(float3(-size, +size, +size), float4(0.0f, 1.0f, 1.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), 0.5f, 0.0f)  //top
+		Vertex(float3(-size, -size, -size), float4(0.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, -size, -size), float4(1.0f, 0.0f, 0.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, -size, +size), float4(1.0f, 0.0f, 1.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(-size, -size, +size), float4(0.0f, 0.0f, 1.0f, 1.0f), float3(0.0f, +1.0f,  0.0f), reflectFactor, refractFactor), //bottom
+		Vertex(float3(-size, +size, -size), float4(0.0f, 1.0f, 0.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, +size, -size), float4(1.0f, 1.0f, 0.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(+size, +size, +size), float4(1.0f, 1.0f, 1.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), reflectFactor, refractFactor), Vertex(float3(-size, +size, +size), float4(0.0f, 1.0f, 1.0f, 1.0f), float3(0.0f, -1.0f,  0.0f), reflectFactor, refractFactor)  //top
 	};
 	return invertedCubeVertices;
 }
@@ -92,6 +95,9 @@ TriangleIndices(1, 5, 6), TriangleIndices(6, 2, 1)
 
 
 std::vector<Vertex> genSphereVertices(float radius, float4 color, int qualityFactor) {
+	const float reflectFactor = 0.75f;
+	const float refractFactor = 0.0f;
+
 	std::vector<Vertex> vertices;
 	const float twoPi = 2.0f * (float)PI;
 	const float halfPi = PI / 2.0f;
@@ -101,7 +107,7 @@ std::vector<Vertex> genSphereVertices(float radius, float4 color, int qualityFac
 		for (float yaw = -halfPi; yaw <= halfPi + 1.0e-6; yaw += step) {
 
 			float3 position = glm::rotateY(glm::rotateX(float3(0, radius, 0), pitch), yaw);
-			vertices.push_back(Vertex(position, color, position));
+			vertices.push_back(Vertex(position, color, position, reflectFactor, refractFactor));
 		}
 
 	}
