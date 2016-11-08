@@ -54,7 +54,7 @@ int main()
 		std::vector<Vertex> triangleVerticesLower = { Vertex(float3(-1.0f, +1.0f, -2.0f), float4(1.0f, 0.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, -1.0f, -2.1f), float4(0.0f, 1.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, +1.0f, -2.0f), float4(0.0f, 0.0f, 1.0f, 1.0f)) };
 
 		const int qualityFactor = 15;
-		sphereTypeBuilder = openClRayTracer.push_backObjectType(genSphereIndices(qualityFactor), genSphereVertices(0.45f, float4(0.5f, 0.5f, 0.5f, 1.0f), qualityFactor));
+		sphereTypeBuilder = openClRayTracer.push_backObjectType(genSphereIndices(qualityFactor), genSphereVertices(0.45f, float4(0.95f, 0.95f, 0.95f, 1.0f), qualityFactor));
 
 
 		triLowerTypeBuilder = openClRayTracer.push_backObjectType(trianglesIndices, triangleVerticesLower);
@@ -111,7 +111,7 @@ int main()
 		
 		for (int z = 0; z < 1; z++)
 			for (int y = 0; y < 1; y++)
-				for (int x = 0; x < 1; x++)
+				for (int x = 0; x < 0; x++)
 					openClRayTracer.push_back(Instance(glm::translate(float16(1.0f), float3(-2.0f - x, y, z)), sphereTypeBuilder));
 		
 		//Resize buffers to fit the stuff to be drawn,

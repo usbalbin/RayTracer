@@ -506,7 +506,6 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	queue.finish();
 
 
-	
 
 	int instanceCount = objectInstances.size();
 	rayTraceAdvancedKernel.setArg(0, sizeof(instanceCount), &instanceCount);
@@ -517,9 +516,6 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	rayTraceAdvancedKernel.setArg(5, hitBuffers[0]);
 	queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NullRange, cl::NDRange(width * height));
 	queue.finish();
-
-
-
 
 
 

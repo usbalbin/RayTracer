@@ -95,7 +95,7 @@ TriangleIndices(1, 5, 6), TriangleIndices(6, 2, 1)
 
 
 std::vector<Vertex> genSphereVertices(float radius, float4 color, int qualityFactor) {
-	const float reflectFactor = 0.75f;
+	const float reflectFactor = 0.99f;
 	const float refractFactor = 0.0f;
 
 	std::vector<Vertex> vertices;
@@ -107,7 +107,7 @@ std::vector<Vertex> genSphereVertices(float radius, float4 color, int qualityFac
 		for (float yaw = -halfPi; yaw <= halfPi + 1.0e-6; yaw += step) {
 
 			float3 position = glm::rotateY(glm::rotateX(float3(0, radius, 0), pitch), yaw);
-			vertices.push_back(Vertex(position, color, position, reflectFactor, refractFactor));
+			vertices.push_back(Vertex(position, color, normalize(position), reflectFactor, refractFactor));
 		}
 
 	}

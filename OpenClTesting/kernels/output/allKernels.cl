@@ -304,8 +304,10 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 	*intersectionPoint = interpolateTriangle(closestTriangle, closestUv);
 	
 	
-	float3 lightDir = normalize((float3)(-0.9f, 0.5f, 0.2f));
-	(*intersectionPoint).color *= dot((*intersectionPoint).normal, -lightDir) * 0.5f + 0.5f;
+	float3 lightDir = normalize((float3)(-0.9f, -0.5f, 0.2f));
+	float dotProduct = dot(normalize((*intersectionPoint).normal), -lightDir);
+	(*intersectionPoint).color *= dotProduct * 0.5f + 0.5f;
+	(*intersectionPoint).color += (float4)(1.0f) * max(pow(dotProduct, 51), 0.0f) * 0.5f;
 	
 	//printf(" - Ray actually hit something!!!");
 	return true;//(float4)((float)(int)closestTriangleDist);
