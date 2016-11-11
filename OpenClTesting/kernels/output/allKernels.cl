@@ -277,7 +277,7 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 		Object object = allObjects[objectIndex];
 		
 		float nearDistacnce, farDistance;
-		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance))
+		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance) || nearDistacnce >= closestTriangleDist)
 			continue;
 		
 		global const TriangleIndices* private triangles = getTrianglesIndices(allTriangles, object);
@@ -306,8 +306,8 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 	
 	float3 lightDir = normalize((float3)(-0.9f, -0.5f, 0.2f));
 	float dotProduct = dot(normalize((*intersectionPoint).normal), -lightDir);
-	(*intersectionPoint).color *= dotProduct * 0.5f + 0.5f;
-	(*intersectionPoint).color += (float4)(1.0f) * max(pow(dotProduct, 51), 0.0f) * 0.5f;
+	(*intersectionPoint).color *= dotProduct * 0.5f + 0.5f;									//Diffuse
+	(*intersectionPoint).color += (float4)(1.0f) * max(pow(dotProduct, 51), 0.0f) * 0.25f;	//Specular
 	
 	//printf(" - Ray actually hit something!!!");
 	return true;//(float4)((float)(int)closestTriangleDist);
@@ -374,6 +374,7 @@ Triangle getTriangle(global const TriangleIndices* trianglesIndices, global cons
 
 void summarizeRays(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut, volatile local atomic_int* groupResultCount);
 void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut);
+void summarizeRaysNewer(global Ray* results, volatile global atomic_int* globalResultCount, Ray reflection, Ray refraction, int hasReflection, int hasRefraction, int* reflectIndexOut, int* refractIndexOut);
 
 void kernel rayGenerator(
 	global const Hit* hits,
@@ -399,21 +400,25 @@ void kernel rayGenerator(
 	Ray refraction = refract(hit);
 	
 	
-	volatile local atomic_int groupResultCount;
+	/*volatile local atomic_int groupResultCount;
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         atomic_init(&groupResultCount, 0);
 		//groupResultCount = 0;
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
-	summarizeRays(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex, &groupResultCount);
+    barrier(CLK_LOCAL_MEM_FENCE);*/
+	summarizeRaysNew(raysOut, rayIndex, reflection, hasReflection, &reflectionIndex);//, &groupResultCount);
 
-	
+	/*
 	if(get_local_id(0)==0){																			// First worker will initialize groupResultCount to 0
         atomic_init(&groupResultCount, 0);
 		//groupResultCount = 0;
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
-	summarizeRays(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex, &groupResultCount);
+    barrier(CLK_LOCAL_MEM_FENCE);*/
+	summarizeRaysNew(raysOut, rayIndex, refraction, hasRefraction, &refractionIndex);//, &groupResultCount);
+	
+	
+	
+	//summarizeRaysNewer(raysOut, rayIndex, reflection, refraction, hasReflection, hasRefraction, &reflectionIndex, &refractionIndex);
 	
 	rayTree.reflectIndex = reflectionIndex;
 	rayTree.refractIndex = refractionIndex;
@@ -461,7 +466,7 @@ void summarizeRays(global Ray* results, volatile global atomic_int* globalResult
 
 
 void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalResultCount, Ray result, bool hasResult, int* indexOut){
-	int groupIndex;
+	local int groupIndex;
 	int privateIndex;
 	
 	bool someInGroupHasResult = work_group_any(hasResult);
@@ -474,7 +479,7 @@ void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalRes
 		
 		barrier(CLK_LOCAL_MEM_FENCE);
 			
-		if(get_local_id(0) == 0){
+		if(get_local_id(0) == get_local_size(0) - 1){
 			int groupResultCount = privateIndex + (hasResult ? 1 : 0);
 			groupIndex = atomic_fetch_add(globalResultCount, groupResultCount);
 		}
@@ -486,6 +491,40 @@ void summarizeRaysNew(global Ray* results, volatile global atomic_int* globalRes
 		int index = groupIndex + privateIndex;
 		*indexOut = index;
 		results[index] = result;
+	}
+}
+
+void summarizeRaysNewer(global Ray* results, volatile global atomic_int* globalResultCount, Ray reflection, Ray refraction, int hasReflection, int hasRefraction, int* reflectIndexOut, int* refractIndexOut){
+	local int groupIndex;
+	int privateIndex;
+	
+	bool someInGroupHasResult = work_group_any(hasReflection | hasRefraction);
+	
+	if(someInGroupHasResult){
+		bool allInGroupHasResult = work_group_all(hasReflection | hasRefraction);
+		privateIndex = allInGroupHasResult ?
+			get_local_id(0) :
+			work_group_scan_exclusive_add(hasReflection + hasRefraction);
+		
+		barrier(CLK_LOCAL_MEM_FENCE);
+			
+		if(get_local_id(0) == get_local_size(0) - 1){
+			int groupResultCount = privateIndex + (hasReflection + hasRefraction);
+			groupIndex = atomic_fetch_add(globalResultCount, groupResultCount);
+		}
+	}
+	
+	
+	barrier(CLK_LOCAL_MEM_FENCE);
+	int index = groupIndex + privateIndex;
+	if(hasReflection){
+		*reflectIndexOut = index;
+		results[index] = reflection;
+	}
+	if(hasRefraction){
+		index += hasRefraction;
+		*refractIndexOut = index;
+		results[index] = refraction;
 	}
 }
 

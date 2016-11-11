@@ -75,7 +75,7 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 		Object object = allObjects[objectIndex];
 		
 		float nearDistacnce, farDistance;
-		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance))
+		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance) || nearDistacnce >= closestTriangleDist)
 			continue;
 		
 		global const TriangleIndices* private triangles = getTrianglesIndices(allTriangles, object);
@@ -105,7 +105,7 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 	float3 lightDir = normalize((float3)(-0.9f, -0.5f, 0.2f));
 	float dotProduct = dot(normalize((*intersectionPoint).normal), -lightDir);
 	(*intersectionPoint).color *= dotProduct * 0.5f + 0.5f;									//Diffuse
-	(*intersectionPoint).color += (float4)(1.0f) * max(pow(dotProduct, 51), 0.0f) * 0.5f;	//Specular
+	(*intersectionPoint).color += (float4)(1.0f) * max(pow(dotProduct, 51), 0.0f) * 0.25f;	//Specular
 	
 	//printf(" - Ray actually hit something!!!");
 	return true;//(float4)((float)(int)closestTriangleDist);

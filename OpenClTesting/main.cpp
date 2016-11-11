@@ -19,8 +19,8 @@
 
 int main()
 {
-	int width = 1024;
-	int height = 768;
+	int width = 1440;//1024;
+	int height = 800;//768;
 	
 
 	int maxInstanceCount = 1;//8; //Does not have to be accurate if openClRayTracer::autoResize() is called later
