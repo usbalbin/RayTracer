@@ -1,5 +1,5 @@
 # RayTracer
-Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
+Reverse Ray Tracer for rendering graphics using CPU or GPU via OpenCL.
 
 ## TODO:
 - Rename "Object" struct to "Mesh"
@@ -37,4 +37,4 @@ Reverse Ray Tracer for rendering graphics using CPU, or GPU via OpenCL.
 - Add support for reflection, refrection and light source(s) in some recursive-like fashion but implemented iterative through multiple kernels calls. One kernel for tracing rays and one for producing reflection/refraction rays on impacts. Repetedly call these
  multiple times and then collect the result through a third kernel.
 
-  - Look into why there are random flickeringpixels when increasing resolution or object count
+  - Look into why there are random flickering pixels when increasing resolution or object count
