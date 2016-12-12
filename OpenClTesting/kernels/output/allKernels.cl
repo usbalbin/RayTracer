@@ -72,7 +72,6 @@ void kernel aabb(
 	
 	
 	Object mesh = objects[gid];
-	float3 maxi, mini;
 	
 	AABB aabb = mesh.boundingBox;
 	aabb.min = aabb.max = vertices[mesh.startVertex].position;
@@ -216,8 +215,8 @@ float interpolate1(float a, float b, float c, float2 uv);
 
 global const Vertex* getVertices(global const Vertex* allVertices, Object object);
 global const TriangleIndices* getTrianglesIndices(global const TriangleIndices* allTriangles, Object object);
-Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleIndices);
-Triangle getTriangle(global const TriangleIndices* trianglesIndices, global const Vertex* vertices, Object object, int index);
+Triangle getTriangle2(const Vertex* vertices, TriangleIndices triangleIndices);
+Triangle getTriangle(const TriangleIndices* trianglesIndices, const Vertex* vertices, Object object, int index);
 
 
 
@@ -271,17 +270,27 @@ bool traceBruteForceColor(int objectCount, global const Object* allObjects, glob
 	float closestTriangleDist = FLT_MAX;
 	Triangle closestTriangle;
 	float2 closestUv;
+	
+	local const TriangleIndices triangles[640];
+	local const Vertex vertices[320];
 
 	for (int objectIndex = 0; objectIndex < objectCount; objectIndex++) {
 		
 		Object object = allObjects[objectIndex];
 		
 		float nearDistacnce, farDistance;
-		if (!intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance) || nearDistacnce >= closestTriangleDist)
+		if (!work_group_any(intersectsBox(ray, object.boundingBox, &nearDistacnce, &farDistance)))/* || nearDistacnce >= closestTriangleDist))*/
 			continue;
 		
-		global const TriangleIndices* private triangles = getTrianglesIndices(allTriangles, object);
-		global const Vertex* private vertices = getVertices(allVertices, object);
+		
+		
+		
+		event_t triEvent =  async_work_group_copy((local float*)triangles, (global float*)getTrianglesIndices(allTriangles, object), sizeof(TriangleIndices) / sizeof(float) * object.numTriangles, 0);
+		event_t vertEvent = async_work_group_copy((local float*)vertices, (global float*)getVertices(allVertices, object), sizeof(Vertex) / sizeof(float) * object.numVertices, 0);
+		
+		wait_group_events(1, &triEvent);
+		wait_group_events(1, &vertEvent);
+		
 		
 		for (int triangleIndex = 0; triangleIndex < object.numTriangles; triangleIndex++) {
 			Triangle triangle = getTriangle(triangles, vertices, object, triangleIndex);
@@ -358,7 +367,7 @@ global const TriangleIndices* getTrianglesIndices(global const TriangleIndices* 
 	return &allTriangles[object.startTriangle];
 }
 
-Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleIndices) {
+Triangle getTriangle2(const Vertex* vertices, TriangleIndices triangleIndices) {
 	Triangle triangle;
 	triangle.a = vertices[triangleIndices.a];
 	triangle.b = vertices[triangleIndices.b];
@@ -366,7 +375,7 @@ Triangle getTriangle2(global const Vertex* vertices, TriangleIndices triangleInd
 	return triangle;
 }
 
-Triangle getTriangle(global const TriangleIndices* trianglesIndices, global const Vertex* vertices, Object object, int index) {
+Triangle getTriangle(const TriangleIndices* trianglesIndices, const Vertex* vertices, Object object, int index) {
 	TriangleIndices triangleIndices = trianglesIndices[index];
 	return getTriangle2(vertices, triangleIndices);
 }

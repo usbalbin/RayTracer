@@ -15,7 +15,7 @@
 #include "OpenGlShaders.hpp"
 #include "Meshes.hpp"
 #include "glm\gtc\matrix_transform.hpp"
-
+#include "Utils.hpp"
 
 int main()
 {
@@ -43,35 +43,35 @@ int main()
 
 	std::cout << "Finished initializing(mostly)..." << std::endl;
 
-	InstanceBuilder cubeTypeBuilder;
-	InstanceBuilder invertedCubeTypeBuilder;
-	InstanceBuilder triLowerTypeBuilder;
-	InstanceBuilder triTypeBuilder;
-	InstanceBuilder sphereTypeBuilder;
+	MultiInstanceBuilder cubeBuilder;
+	MultiInstanceBuilder invertedCubeBuilder;
+	MultiInstanceBuilder sphereTypeBuilder;
+
+	std::string bunnyPath = "content/test.obj";
+	MultiInstanceBuilder bunnyBuilder;
 	{
-		std::vector<TriangleIndices> trianglesIndices = { TriangleIndices(0, 1, 2) };
-		std::vector<Vertex> triangleVertices = { Vertex(float3(-1.0f, -1.0f, -2.0f), float4(1.0f, 0.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, +1.0f, -2.1f), float4(0.0f, 1.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, -1.0f, -2.0f), float4(0.0f, 0.0f, 1.0f, 1.0f)) };
-		std::vector<Vertex> triangleVerticesLower = { Vertex(float3(-1.0f, +1.0f, -2.0f), float4(1.0f, 0.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, -1.0f, -2.1f), float4(0.0f, 1.0f, 0.0f, 1.0f)), Vertex(float3(1.0f, +1.0f, -2.0f), float4(0.0f, 0.0f, 1.0f, 1.0f)) };
+		std::vector<Vertex> bunnyVertices;
+		std::vector<TriangleIndices> bunnyIndices;
+		readObjFile(bunnyVertices, bunnyIndices, bunnyPath, 1.0f, 1.0f);
 
+
+		bunnyBuilder = openClRayTracer.push_backMultiObjectTypes(bunnyIndices, bunnyVertices, 128, 128);
+		
+
+		
 		const int qualityFactor = 15;
-		sphereTypeBuilder = openClRayTracer.push_backObjectType(genSphereIndices(qualityFactor), genSphereVertices(0.45f, float4(0.95f, 0.95f, 0.95f, 1.0f), qualityFactor));
-
-
-		triLowerTypeBuilder = openClRayTracer.push_backObjectType(trianglesIndices, triangleVerticesLower);
-		triTypeBuilder = openClRayTracer.push_backObjectType(trianglesIndices, triangleVertices);
+		sphereTypeBuilder = openClRayTracer.push_backMultiObjectTypes(genSphereIndices(qualityFactor), genSphereVertices(0.45f, float4(0.95f, 0.95f, 0.95f, 1.0f), qualityFactor), 128, 128);
 		
-		invertedCubeTypeBuilder = openClRayTracer.push_backObjectType(genInvertedCubeIndices(), genInvertedCubeVertices(10));
 		
-		cubeTypeBuilder = openClRayTracer.push_backObjectType(genCubeIndices(), genCubeVertices(0.5f));
-		//object = openClRayTracer.push_back(cubeTriangleIndices, smallCubeVertices);
 
+		invertedCubeBuilder = openClRayTracer.push_backMultiObjectTypes(genInvertedCubeIndices(), genInvertedCubeVertices(10));
+		
+		cubeBuilder = openClRayTracer.push_backMultiObjectTypes(genCubeIndices(), genCubeVertices(0.5f));
+		
 		openClRayTracer.reserve(maxInstanceCount, maxTotalVertexCount);
 		openClRayTracer.autoResizeObjectTypes();
 		openClRayTracer.writeToObjectTypeBuffers();
 	}
-
-	//auto cubeIndices = openClRayTracer.getTriangles(cubeTypeBuilder);// Doing stuff to this object type will alter every instance of this object type once the buffers are updated
-	//auto cubeVertices = openClRayTracer.getVertices(cubeTypeBuilder);
 
 	std::cout << "Finished initializing(completely)..." << std::endl;
 	float v = 0;//3.14159265f / 1.0f;
@@ -91,29 +91,29 @@ int main()
 		//Clear list of old stuff to drow from previous frame
 		openClRayTracer.clear();
 
-		//Add new stuff to draw for current frame
-		//openClRayTracer.push_back(Instance(float16(1.0f), triLowerTypeBuilder));
-		//openClRayTracer.push_back(Instance(float16(1.0f), triTypeBuilder));
-		//openClRayTracer.push_back(Instance(glm::translate(float16(2.0f), float3(1.0f, -1.0f, -0.5f)), triTypeBuilder));
-		openClRayTracer.push_back(Instance(float16(1.0f), invertedCubeTypeBuilder));
-		openClRayTracer.push_back(Instance(glm::translate(float16(4.0f), float3(-1.0f, 0, 0)), sphereTypeBuilder));
-		openClRayTracer.push_back(Instance(glm::translate(float16(4.0f), float3(+1.0f, 0, 0)), sphereTypeBuilder));
-		//openClRayTracer.push_back(Instance(glm::translate(float16(1.2f), float3(0.0f, 2.0f, 1.5f)), cubeTypeBuilder));
+			
+		
+
+		openClRayTracer.push_back(MultiInstance(float16(1.0f), invertedCubeBuilder));
+		openClRayTracer.push_back(MultiInstance(glm::translate(float16(4.0f), float3(-2.0f, 0.5f, 0)), sphereTypeBuilder));
+		openClRayTracer.push_back(MultiInstance(glm::translate(float16(3.0f), float3(+3.0f, 0.5f, 0)), cubeBuilder));
+		
+
 		//openClRayTracer.push_back(Instance(
 		//	glm::translate(float16(0.70f), float3(0.0f, 2.0f * sin(50.0f * v), 3.0f)),
 		//	cubeTypeBuilder
 		//));
-		openClRayTracer.push_back(Instance(
-			glm::rotate(glm::translate(float16(1.0f), float3(0.0f, 0.0f, 0.0f)), v * 3.5f, float3(0, 0, 1)),
-			cubeTypeBuilder
+		openClRayTracer.push_back(MultiInstance(
+			glm::rotate(glm::translate(float16(20.0f), float3(0.0f, 0.0f, 0.0f)), v, float3(0, 1, 0)),
+			bunnyBuilder
 		));
 
 		
-		for (int z = 0; z < 1; z++)
+		/*for (int z = 0; z < 1; z++)
 			for (int y = 0; y < 1; y++)
 				for (int x = 0; x < 0; x++)
 					openClRayTracer.push_back(Instance(glm::translate(float16(1.0f), float3(-2.0f - x, y, z)), sphereTypeBuilder));
-		
+		*/
 		//Resize buffers to fit the stuff to be drawn,
 		//only needs to be callen when more/larger stuff has been added since last resize
 		openClRayTracer.autoResize();//TODO: this is rather expensive, remove me if possible 
@@ -131,7 +131,7 @@ int main()
 		event = openClRayTracer.prepRayTraceNonBlocking();
 
 		//Whait for the preparations to finnish
-		//event.wait();
+		event.wait();
 		
 		//Start the actual Ray Tracing and draw result to the screen
 		

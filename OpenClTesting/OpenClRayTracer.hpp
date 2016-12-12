@@ -11,7 +11,7 @@
 
 #define ADVANCED_RENDERER
 //#define RUN_ON_CPU
-#define RAY_DEPTH 3
+#define RAY_DEPTH 2
 
 class OpenClRayTracer
 {
@@ -21,10 +21,12 @@ public:
 
 	void clear();
 	void push_back(Instance instance);
+	void push_back(MultiInstance instance);
 	Instance pop_instance();
 
 	InstanceBuilder push_backObjectType(std::vector<TriangleIndices>& objectTypeIndices, std::vector<Vertex>& objectTypeVertices);
 
+	MultiInstanceBuilder push_backMultiObjectTypes(std::vector<TriangleIndices>& objectTypeIndices, std::vector<Vertex>& objectTypeVertices, int maxVerticesPerObject = 320, int maxIndicesPerObject = 640);
 	
 	//ArraySlice<TriangleIndices> getTriangles(Object object);	// Doing stuff to thise object type will alter every instance of this object type once the buffers are updated
 	//ArraySlice<Vertex> getVertices(Object object);			// Not yet implemented

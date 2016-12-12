@@ -14,7 +14,6 @@ void kernel aabb(
 	
 	
 	Object mesh = objects[gid];
-	float3 maxi, mini;
 	
 	AABB aabb = mesh.boundingBox;
 	aabb.min = aabb.max = vertices[mesh.startVertex].position;

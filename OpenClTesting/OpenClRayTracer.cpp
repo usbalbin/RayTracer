@@ -162,26 +162,26 @@ void OpenClRayTracer::initialize() {
 	treeTraverserKernel = cl::Kernel(program, "treeTraverser", &status);
 	colorToPixelKernel = cl::Kernel(program, "colorToPixel", &status);
 #endif
-	if (status != CL_SUCCESS) {
-		std::cout << "Failed to create kernels" << std::endl;
-		exit(1);
-	}
-	
+if (status != CL_SUCCESS) {
+	std::cout << "Failed to create kernels" << std::endl;
+	exit(1);
+}
+
 #ifndef RUN_ON_CPU
-	resultImages[0] = cl::ImageGL(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, openGlTextureID, &status);
-	if (status != CL_SUCCESS) {
-		std::cout << "Failed to create OpenCL image from OpenGL texture" << std::endl;
-		exit(1);
-	}
+resultImages[0] = cl::ImageGL(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, openGlTextureID, &status);
+if (status != CL_SUCCESS) {
+	std::cout << "Failed to create OpenCL image from OpenGL texture" << std::endl;
+	exit(1);
+}
 #else
-	resultImages[0] = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(float4) * width * height);
-	if (status != CL_SUCCESS) {
-		std::cout << "Failed to create OpenCL image from OpenGL texture" << std::endl;
-		exit(1);
-	}
+resultImages[0] = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(float4) * width * height);
+if (status != CL_SUCCESS) {
+	std::cout << "Failed to create OpenCL image from OpenGL texture" << std::endl;
+	exit(1);
+}
 #endif // !RUN_ON_CPU
 
-	
+
 }
 
 void OpenClRayTracer::autoResize() {
@@ -193,7 +193,7 @@ void OpenClRayTracer::autoResizeObjectTypes() {
 	reserveObjectTypeBuffers(objectTypes.size(), objectTypeIndices.size(), objectTypeVertices.size());
 }
 
-void OpenClRayTracer::reserve(int maxInstanceCount, int maxTotalVertexCount){
+void OpenClRayTracer::reserve(int maxInstanceCount, int maxTotalVertexCount) {
 	reserveArrays(maxInstanceCount);
 	reserveBuffers(maxInstanceCount, maxTotalVertexCount);
 }
@@ -210,7 +210,7 @@ void OpenClRayTracer::reserveObjectTypeBuffers(int maxObjectTypeCount, int maxOb
 
 void OpenClRayTracer::reserveBuffers(int maxInstanceCount, int maxTotalVertexCount) {
 	objectInstanceBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(Instance) * maxInstanceCount);
-	
+
 	transformedObjectBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(Object) * maxInstanceCount);
 	transformedVertexBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(Vertex) * maxTotalVertexCount);
 
@@ -223,11 +223,17 @@ void OpenClRayTracer::clear() {
 
 void OpenClRayTracer::push_back(Instance instance) {
 	instance.startVertex = this->transformedVertexCount;
-	
+
 	Object objectType = this->objectTypes[instance.meshType];
 
 	this->objectInstances.push_back(instance);
 	this->transformedVertexCount += objectType.numVertices;
+}
+
+void OpenClRayTracer::push_back(MultiInstance multiInstance)
+{
+	for (auto& instance : multiInstance.instances)
+		push_back(instance);
 }
 
 Instance OpenClRayTracer::pop_instance() {
@@ -256,9 +262,38 @@ InstanceBuilder OpenClRayTracer::push_backObjectType(std::vector<TriangleIndices
 
 	const int meshType = objectTypes.size() - 1;
 	InstanceBuilder instanceBuilder(objectType, meshType);
-	
+
 	return instanceBuilder;
 }
+
+MultiInstanceBuilder OpenClRayTracer::push_backMultiObjectTypes(std::vector<TriangleIndices>& objectTypeIndices, std::vector<Vertex>& objectTypeVertices, int maxVerticesPerObject, int maxIndicesPerObject)
+{
+	MultiInstanceBuilder multiInstanceBuilder;
+	auto& instanceBuilders = multiInstanceBuilder.instanceBuilders;
+	std::vector<std::vector<Vertex>> verticesCollections;
+	std::vector<std::vector<TriangleIndices>> indicesCollections;
+
+	verticesCollections.push_back(objectTypeVertices);
+	indicesCollections.push_back(objectTypeIndices);
+	
+
+	for (int i = 0; i < verticesCollections.size();) {
+		if (indicesCollections[i].size() < maxIndicesPerObject && verticesCollections[i].size() < maxVerticesPerObject) {//If small enough
+			instanceBuilders.push_back(
+				push_backObjectType(indicesCollections[i], verticesCollections[i])
+			);
+			i++;
+		}
+		else {
+			verticesCollections.emplace_back();
+			indicesCollections.emplace_back();
+			splitMesh(verticesCollections[i], indicesCollections[i], verticesCollections.back(), indicesCollections.back());
+		}
+	}
+	return multiInstanceBuilder;
+}
+
+
 
 void OpenClRayTracer::writeToObjectTypeBuffers() {
 	if (queue.enqueueWriteBuffer(objectTypeBuffer, CL_TRUE, 0, sizeof(Object) * objectTypes.size(), objectTypes.data()) != CL_SUCCESS) {
@@ -332,8 +367,6 @@ cl::Event OpenClRayTracer::vertexShaderNonBlocking() {
 	queue.enqueueNDRangeKernel(vertexShaderKernel, cl::NullRange, cl::NDRange(objectInstances.size()), cl::NullRange, 0, &event);
 
 	
-	queue.finish();
-	
 	return event;
 
 }
@@ -355,24 +388,13 @@ cl::Event OpenClRayTracer::aabbNonBlocking() {
 
 	queue.enqueueNDRangeKernel(aabbKernel, cl::NullRange, cl::NDRange(objectInstances.size()), cl::NullRange, 0, &event);
 
-	/*
-	//debug
-	event.wait();
-
-	std::vector<Object> objs;
-	objs.resize(objectInstances.size());
-	queue.enqueueReadBuffer(transformedObjectBuffer, CL_TRUE, 0, sizeof(Object) * objs.size(), objs.data());
-	queue.finish();
-	*/
-	
-	queue.finish();
 	return event;
 
 }
 
 //Give me a better name
 cl::Event OpenClRayTracer::prepRayTraceNonBlocking() {
-	vertexShaderNonBlocking();// .wait();		//WARNING CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE can not be set for cammand queue for this to work!!!
+	vertexShaderNonBlocking().wait();
 	return aabbNonBlocking();
 }
 
@@ -419,15 +441,6 @@ cl::Event OpenClRayTracer::rayTraceNonBlocking(float16 matrix) {
 		exit(1);
 	}
 	
-	/*
-	int objectCount = objectTypes.size();
-	rayTraceKernel.setArg(0, sizeof(objectCount), &objectCount);
-	rayTraceKernel.setArg(1, sizeof(float16), &matrix);
-	rayTraceKernel.setArg(2, objectTypeBuffer);
-	rayTraceKernel.setArg(3, objectTypeIndexBuffer);
-	rayTraceKernel.setArg(4, objectTypeVertexBuffer);
-	rayTraceKernel.setArg(5, resultImages[0]);
-	*/
 	queue.finish();
 
 	cl::Event event;
@@ -580,6 +593,12 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 void OpenClRayTracer::resizeCallback(GLFWwindow* window, int width, int height) {
 	this->width = width;
 	this->height = height;
+
+#ifdef ADVANCED_RENDERER
+	throw "Resize Not implemented!";
+#endif // ADVANCED_RENDERER
+
+
 	renderer.resizeCallback(window, width, height);
 
 	cl_int status;
