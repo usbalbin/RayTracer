@@ -5,13 +5,17 @@
 #include "OpenGlShaders.hpp"
 
 #include <vector>
+#include <array>
 #include "CL\cl.hpp"
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
+#include <chrono>
 
 #define ADVANCED_RENDERER
 //#define RUN_ON_CPU
 #define RAY_DEPTH 2
+typedef std::chrono::high_resolution_clock::time_point TimePoint;
+typedef std::chrono::high_resolution_clock::duration Duration;
 
 class OpenClRayTracer
 {
@@ -62,6 +66,8 @@ private:
 	void reserveArrays(int maxInstanceCount);
 	void reserveObjectTypeBuffers(int maxObjectTypeCount, int maxObjectTypeTriangleCount, int maxObjectTypeVertexCount);
 	void reserveBuffers(int maxObjectCount, int maxVertexCount);
+	void profileAdvancedRender(TimePoint startTime, std::array<TimePoint, RAY_DEPTH> rayTracerStartTimes, std::array<TimePoint, RAY_DEPTH - 1> rayGeneratorStartTimes, std::array<TimePoint, RAY_DEPTH - 1> treeTraverserStartTimes, TimePoint colorToPixelStartTime, TimePoint drawingStartTime, TimePoint doneTime);
+	double OpenClRayTracer::durationToMs(Duration duration);
 
 	std::vector<Object> objectTypes;
 	std::vector<TriangleIndices> objectTypeIndices;
@@ -112,4 +118,3 @@ private:
 
 	
 };
-

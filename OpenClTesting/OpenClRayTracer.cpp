@@ -10,6 +10,7 @@
 #include <iostream>
 #include <stack>
 #include <atomic>
+#include <iomanip>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -502,23 +503,27 @@ void OpenClRayTracer::initializeAdvancedRender() {
 
 	for (int i = 0; i < RAY_DEPTH; i++) {
 		size_t raySize = sizeof(Ray);
-		size_t rayBufferSize = sizeof(Ray) * width * height * (1 << i);
+		size_t rayBufferSize = sizeof(Ray) * width * height * (1 << (i));
 		rayBuffers.push_back(cl::Buffer(context, CL_MEM_READ_WRITE, rayBufferSize));
 		rayTreeBuffers.push_back(cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(RayTree) * width * height * (1 << i)));
 		hitBuffers.push_back(cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(Hit) * width * height * (1 << i)));
 	}
-	hitBuffers.push_back(cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(Hit) * width * height * (1 << RAY_DEPTH)));
 }
 
 void OpenClRayTracer::advancedRender(float16 matrix) {
 	queue.finish();
+
+	auto startTime = std::chrono::high_resolution_clock::now();
+
 	cl_int rayCount = width * height;
 	perspectiveRayGeneratorKernel.setArg(0, matrix);
 	perspectiveRayGeneratorKernel.setArg(1, rayBuffers[0]);
 	queue.enqueueNDRangeKernel(perspectiveRayGeneratorKernel, cl::NullRange, cl::NDRange(width, height));
 	queue.finish();
-
-
+	
+	
+	std::array<TimePoint, RAY_DEPTH> rayTracerStartTimes;
+	rayTracerStartTimes[0] = std::chrono::high_resolution_clock::now();
 
 	int instanceCount = objectInstances.size();
 	rayTraceAdvancedKernel.setArg(0, sizeof(instanceCount), &instanceCount);
@@ -540,19 +545,20 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	std::vector<cl_int> rayCounts(RAY_DEPTH);
 
 
+	std::array<TimePoint, RAY_DEPTH - 1> rayGeneratorStartTimes;
 
 	int i;
 	for (i = 0; i < RAY_DEPTH - 1; i++) {//Continue until maximum ray depth is reached or no more rays left to trace
 		if (rayCount > (1 << i) * width * height)
 			throw std::exception("Too large rayCount! Probably caused by some bug");			//Probably caused by some syncronization bug
 
-
+		rayGeneratorStartTimes[i] = std::chrono::high_resolution_clock::now();
 
 		rayCounts[i] = rayCount;
 
 		cl_int startIndex;
 		rayGeneratorKernel.setArg(0, hitBuffers[i]);
-		rayGeneratorKernel.setArg(2, rayBuffers[i]);
+		rayGeneratorKernel.setArg(2, rayBuffers[i + 1]);
 		rayGeneratorKernel.setArg(3, rayTreeBuffers[i]);
 		startIndex = 0;																				//
 		queue.enqueueWriteBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &startIndex);			//Reset rayIndex to 0
@@ -564,8 +570,9 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 			break;
 		}
 
+		rayTracerStartTimes[i + 1] = std::chrono::high_resolution_clock::now();
 		
-		rayTraceAdvancedKernel.setArg(4, rayBuffers[i]);
+		rayTraceAdvancedKernel.setArg(4, rayBuffers[i + 1]);
 		rayTraceAdvancedKernel.setArg(5, hitBuffers[i + 1]);
 		rayTraceAdvancedKernel.setArg(6, rayTreeBuffers[i + 1]);
 		queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NullRange, cl::NDRange(rayCount));
@@ -573,10 +580,13 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 
 	}
 	
+	std::array<TimePoint, RAY_DEPTH - 1> treeTraverserStartTimes;
 
 	for (; i > 0; i--) {
 		rayCount = rayCounts[i - 1];
 		//rayCounts.pop_back();
+		
+		treeTraverserStartTimes[RAY_DEPTH - i - 1] = std::chrono::high_resolution_clock::now();
 
 		treeTraverserKernel.setArg(0, rayTreeBuffers[i - 1]);//[i - 1]);
 		treeTraverserKernel.setArg(1, rayTreeBuffers[i]);
@@ -584,12 +594,79 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 		queue.finish();
 	}
 
+	auto colorToPixelStartTime = std::chrono::high_resolution_clock::now();
+
 	colorToPixelKernel.setArg(0, rayTreeBuffers[0]);
 	colorToPixelKernel.setArg(1, resultImages[0]);
 	queue.enqueueNDRangeKernel(colorToPixelKernel, cl::NullRange, cl::NDRange(width, height));
 	queue.finish();
 
+	auto drawingStartTime = std::chrono::high_resolution_clock::now();
 	fetchRayTracerResult();
+
+	auto doneTime = std::chrono::high_resolution_clock::now();
+
+	
+	
+	
+	profileAdvancedRender(
+		startTime,
+		rayTracerStartTimes,
+		rayGeneratorStartTimes,
+		treeTraverserStartTimes,
+		colorToPixelStartTime,
+		drawingStartTime,
+		doneTime
+	);
+}
+
+void OpenClRayTracer::profileAdvancedRender(
+	TimePoint startTime,
+	std::array<TimePoint, RAY_DEPTH> rayTracerStartTimes,
+	std::array<TimePoint, RAY_DEPTH - 1> rayGeneratorStartTimes,
+	std::array<TimePoint, RAY_DEPTH - 1> treeTraverserStartTimes,
+	TimePoint colorToPixelStartTime,
+	TimePoint drawingStartTime,
+	TimePoint doneTime
+) {
+	static auto lastTimeOfReport = std::chrono::high_resolution_clock::now();
+	auto deltaTime = doneTime - lastTimeOfReport;
+	if (deltaTime < std::chrono::seconds(5))
+		return;
+
+	lastTimeOfReport += deltaTime;
+	std::cout << std::fixed << std::setprecision(2);
+	std::cout << "----Total Time: " << durationToMs(doneTime - startTime) << "ms----" << std::endl;
+	std::cout << "--------" << std::endl;
+	
+	std::cout << "PerspectiveRayGenerator: " << durationToMs(rayTracerStartTimes[0] - startTime) << "ms----" << std::endl;
+	for (int i = 0; i < RAY_DEPTH - 2; i++) {
+		std::cout << "RayGenerator run(" << (i + 1) << "): " << durationToMs(rayTracerStartTimes[i + 1] - rayGeneratorStartTimes[i]) << "ms----" << std::endl;
+	}
+	std::cout << "RayGenerator run(" << (RAY_DEPTH - 1) << "): " << durationToMs(rayTracerStartTimes[RAY_DEPTH - 1] - rayGeneratorStartTimes[RAY_DEPTH - 2]) << "ms----" << std::endl;
+	std::cout << "--------" << std::endl;
+	
+	std::cout << "RayTracer run(0): " << durationToMs(rayGeneratorStartTimes[0] - rayTracerStartTimes[0]) << "ms----" << std::endl;
+	for (int i = 0; i < RAY_DEPTH - 2; i++) {
+		std::cout << "RayTracer run(" << (i + 1) << "): " << durationToMs(rayGeneratorStartTimes[i + 1] - rayTracerStartTimes[i + 1]) << "ms----" << std::endl;
+	}
+	std::cout << "RayTracer run(" << (RAY_DEPTH - 1) << "): " << durationToMs(treeTraverserStartTimes[0] - rayTracerStartTimes[RAY_DEPTH - 1]) << "ms----" << std::endl;
+	std::cout << "--------" << std::endl;
+
+	for (int i = 1; i < RAY_DEPTH - 1; i++) {
+		std::cout << "TreeTraverse run(" << (i - 1) << "): " << durationToMs(treeTraverserStartTimes[i] - treeTraverserStartTimes[i - 1]) << "ms----" << std::endl;
+	}
+	std::cout << "TreeTraverse run(" << (RAY_DEPTH - 2) << "): " << durationToMs(colorToPixelStartTime - treeTraverserStartTimes[RAY_DEPTH - 2]) << "ms----" << std::endl;
+	std::cout << "--------" << std::endl;
+
+	std::cout << "ColorToPixel: " << durationToMs(drawingStartTime - colorToPixelStartTime) << "ms----" << std::endl;
+	std::cout << "Drawing: " << durationToMs(doneTime - drawingStartTime) << "ms----" << std::endl;
+	for(int i = 0; i < 10; i++)
+		std::cout << std::endl;
+}
+
+double OpenClRayTracer::durationToMs(Duration duration) {
+	return std::chrono::duration<double, std::milli>(duration).count();
 }
 
 
