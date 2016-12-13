@@ -527,6 +527,7 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 	rayTraceAdvancedKernel.setArg(3, transformedVertexBuffer);
 	rayTraceAdvancedKernel.setArg(4, rayBuffers[0]);
 	rayTraceAdvancedKernel.setArg(5, hitBuffers[0]);
+	rayTraceAdvancedKernel.setArg(6, rayTreeBuffers[0]);
 	queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NullRange, cl::NDRange(width * height));
 	queue.finish();
 
@@ -541,7 +542,7 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 
 
 	int i;
-	for (i = 0; i < RAY_DEPTH; i++) {//Continue until maximum ray depth is reached or no more rays left to trace
+	for (i = 0; i < RAY_DEPTH - 1; i++) {//Continue until maximum ray depth is reached or no more rays left to trace
 		if (rayCount > (1 << i) * width * height)
 			throw std::exception("Too large rayCount! Probably caused by some bug");			//Probably caused by some syncronization bug
 
@@ -559,19 +560,21 @@ void OpenClRayTracer::advancedRender(float16 matrix) {
 		queue.finish();
 		queue.enqueueReadBuffer(rayCountBuffer, CL_TRUE, 0, sizeof(cl_int), &rayCount);
 
-		if (!rayCount)//No rays left to trace(parents weren't refractive/reflective)
+		if (!rayCount) {//No rays left to trace(parents weren't refractive/reflective)
 			break;
+		}
 
 		
 		rayTraceAdvancedKernel.setArg(4, rayBuffers[i]);
 		rayTraceAdvancedKernel.setArg(5, hitBuffers[i + 1]);
+		rayTraceAdvancedKernel.setArg(6, rayTreeBuffers[i + 1]);
 		queue.enqueueNDRangeKernel(rayTraceAdvancedKernel, cl::NullRange, cl::NDRange(rayCount));
 		queue.finish();
 
 	}
 	
 
-	for (i--; i > 0; i--) {
+	for (; i > 0; i--) {
 		rayCount = rayCounts[i - 1];
 		//rayCounts.pop_back();
 

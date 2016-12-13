@@ -37,7 +37,8 @@ void kernel rayTraceAdvanced(
 	global const TriangleIndices* triangles,
 	global const Vertex* vertices,
 	global const Ray* rays,
-	global Hit* hits
+	global Hit* hits,
+	global RayTree* rayTrees 
 ){
 	Vertex intersectionPoint;
 	Ray ray = rays[gid];
@@ -53,6 +54,12 @@ void kernel rayTraceAdvanced(
 	}
 	
 	hits[gid] = hit;
+	
+	RayTree rayTree;
+	rayTree.color = hit.vertex.color;
+	rayTree.reflectFactor = hit.vertex.reflectFactor;
+	rayTree.refractFactor = hit.vertex.refractFactor;
+	rayTrees[gid] = rayTree;
 }
 
 Hit sky(Ray ray){

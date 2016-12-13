@@ -238,7 +238,8 @@ void kernel rayTraceAdvanced(
 	global const TriangleIndices* triangles,
 	global const Vertex* vertices,
 	global const Ray* rays,
-	global Hit* hits
+	global Hit* hits,
+	global RayTree* rayTrees 
 ){
 	Vertex intersectionPoint;
 	Ray ray = rays[gid];
@@ -254,6 +255,12 @@ void kernel rayTraceAdvanced(
 	}
 	
 	hits[gid] = hit;
+	
+	RayTree rayTree;
+	rayTree.color = hit.vertex.color;
+	rayTree.reflectFactor = hit.vertex.reflectFactor;
+	rayTree.refractFactor = hit.vertex.refractFactor;
+	rayTrees[gid] = rayTree;
 }
 
 Hit sky(Ray ray){
@@ -391,15 +398,11 @@ void kernel rayGenerator(
 	global Ray* raysOut,
 	global RayTree* rayTrees
 ){
-	RayTree rayTree;
 	Hit hit = hits[gid];
-	rayTree.color = hit.vertex.color;
-	rayTree.reflectFactor = hit.vertex.reflectFactor;
-	rayTree.refractFactor = hit.vertex.refractFactor;
 
 
-	bool hasReflection = rayTree.reflectFactor > 0;
-	bool hasRefraction = rayTree.refractFactor > 0;
+	bool hasReflection = hit.vertex.reflectFactor > 0;
+	bool hasRefraction = hit.vertex.refractFactor > 0;
 	int reflectionIndex = -1;
 	int refractionIndex = -1;
 	
@@ -429,10 +432,8 @@ void kernel rayGenerator(
 	
 	//summarizeRaysNewer(raysOut, rayIndex, reflection, refraction, hasReflection, hasRefraction, &reflectionIndex, &refractionIndex);
 	
-	rayTree.reflectIndex = reflectionIndex;
-	rayTree.refractIndex = refractionIndex;
-	
-	rayTrees[gid] = rayTree;
+	rayTrees[gid].reflectIndex = reflectionIndex;
+	rayTrees[gid].refractIndex = refractionIndex;
 }
 
 
