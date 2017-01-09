@@ -2,6 +2,11 @@
 Reverse Ray Tracer for rendering graphics using CPU or GPU via OpenCL.
 
 ## TODO:
+
+- Add BVH structure support in advancedRayTracer - kernel, potentialy improving performance from n to log(n) with BVH
+  - BVH for object/mesh lookup in advancedRayTracer - kernel
+  - BVH for triangle lookup per object/mesh in advancedRayTracer - kernel
+
 - Rename "Object" struct to "Mesh"
 
 - Make sure there is CPU-compute support and remove depricated "DebugRayTracer"
